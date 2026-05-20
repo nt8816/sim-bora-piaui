@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#12244a">
+    <title>Sim-Bora Piauí</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main id="app" aria-label="Sim-Bora Piauí">
+      <canvas id="game" width="960" height="540" aria-label="Jogo 2D Sim-Bora Piauí"></canvas>
+
+      <section id="startScreen" class="screen">
+        <div class="menuStage" aria-label="Menu inicial">
+          <div class="menuActions">
+            <button id="startButton" class="menuButton menuButtonPrimary" type="button">Jogar</button>
+            <button id="optionsButton" class="menuButton" type="button">Opções</button>
+            <button id="marketplaceButton" class="menuButton menuButtonRibbon" type="button">Marketplace</button>
+            <button id="wardrobeButton" class="menuButton menuButtonSmall" type="button">Vestiário</button>
+          </div>
+          <div class="playerTag" aria-hidden="true">EXPLORADOR_PI</div>
+        </div>
+      </section>
+
+      <section id="menuModal" class="menuModal hidden" aria-live="polite" aria-modal="true">
+        <div class="menuModalPanel">
+          <button id="closeMenuModal" class="modalClose" type="button" aria-label="Fechar">x</button>
+          <h2 id="menuModalTitle"></h2>
+          <div id="menuModalBody"></div>
+        </div>
+      </section>
+
+      <section id="dialog" class="dialog hidden" aria-live="polite">
+        <strong id="dialogTitle"></strong>
+        <p id="dialogText"></p>
+        <div id="answers" class="answers"></div>
+      </section>
+
+      <section id="hud" class="hud hidden" aria-label="Progresso">
+        <div><span id="placeName">Picos</span></div>
+        <div>Saberes <span id="score">0</span>/<span id="total">5</span></div>
+      </section>
+
+      <section id="collection" class="collection hidden" aria-label="Coleção cultural">
+        <button id="closeCollection" type="button" aria-label="Fechar coleção">x</button>
+        <h2>Coleção Cultural</h2>
+        <div id="collectionList"></div>
+      </section>
+
+      <button id="bagButton" class="bag hidden" type="button" aria-label="Abrir mochila" aria-pressed="false">
+        <span class="bagIcon" aria-hidden="true"></span>
+        <span>Mochila</span>
+      </button>
+
+      <div id="touchControls" class="touch hidden" aria-label="Controles de toque">
+        <div id="moveControls" class="movePad" aria-label="Andar">
+          <button class="moveButton moveUp" type="button" data-move-x="0" data-move-y="-1" aria-label="Andar para cima">▲</button>
+          <button class="moveButton moveLeft" type="button" data-move-x="-1" data-move-y="0" aria-label="Andar para esquerda">◀</button>
+          <button class="moveButton moveRight" type="button" data-move-x="1" data-move-y="0" aria-label="Andar para direita">▶</button>
+          <button class="moveButton moveDown" type="button" data-move-x="0" data-move-y="1" aria-label="Andar para baixo">▼</button>
+        </div>
+        <button id="actionButton" class="action" type="button" aria-label="Interagir">E</button>
+      </div>
+    </main>
+    <script src="game.js"></script>
+  </body>
+</html>

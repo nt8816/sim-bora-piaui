@@ -1,0 +1,16 @@
+{
+  "name": "Sim-Bora Piauí",
+  "short_name": "Sim-Bora",
+  "start_url": "index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#101827",
+  "theme_color": "#12244a",
+  "icons": [
+    {
+      "src": "elementos /LOGO SIMBORA.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
