@@ -13,6 +13,13 @@ const SEU_ZE_IDLE_ROWS := 8
 const SEU_ZE_IDLE_FRAME_COUNT := 40
 const SEU_ZE_IDLE_FRAME_SIZE := Vector2(96, 128)
 const SEU_ZE_IDLE_FPS := 8.0
+const SEU_ZE_FAN_COLUMNS := 11
+const SEU_ZE_FAN_ROWS := 11
+const SEU_ZE_FAN_FRAME_COUNT := 120
+const SEU_ZE_FAN_LOOP_START_FRAME := 55
+const SEU_ZE_FAN_FPS := 18.0
+const SEU_ZE_FAN_CROP_X_RATIO := 430.0 / 1950.0
+const SEU_ZE_FAN_CROP_WIDTH_RATIO := 1040.0 / 1950.0
 const CHARACTER_SHEETS: Dictionary = {
 	"male": "res://assets/personagem_masculino.png",
 	"female": "res://assets/personagem_feminina.png"
@@ -35,6 +42,7 @@ var asphalt_texture: Texture2D = preload("res://assets/asfalto.png")
 var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
 var seu_ze_texture: Texture2D = preload("res://assets/seu_ze_lendas.png")
 var seu_ze_idle_texture: Texture2D = preload("res://assets/seu_ze_idle_clean.png")
+var seu_ze_fan_texture: Texture2D
 var camera_texture: Texture2D = preload("res://assets/camera.png")
 var memory_polaroid_texture: Texture2D = preload("res://assets/memoria_picos_polaroid.png")
 var opening_music_stream: AudioStream = preload("res://assets/audio_abertura_picos.mp3")
@@ -87,6 +95,8 @@ var opening_memory_open := false
 var opening_ze_ready := false
 var opening_hint := "Toque no icone para registrar sua primeira memoria!"
 var opening_flash := 0.0
+var seu_ze_fan_started_msec := -1
+var seu_ze_fan_intro_done := false
 var opening_music_player: AudioStreamPlayer
 var camera_sound_player: AudioStreamPlayer
 var running := false
@@ -404,6 +414,7 @@ func load_special_sprites() -> void:
 		church_collision_image = church_picos_sprite["texture"].get_image()
 	asphalt_curve_sprite = make_clean_sprite(asphalt_curve_texture, true)
 	camera_sprite = make_clean_sprite(camera_texture, true)
+	seu_ze_fan_texture = load_png_texture("res://assets/seu_ze_abanando_120.png")
 	seu_ze_sprite = make_clean_sprite(seu_ze_texture, true)
 	water_sprites.clear()
 	for texture in water_textures:
@@ -667,6 +678,8 @@ func setup_opening_spawn() -> void:
 	opening_memory_open = false
 	opening_ze_ready = false
 	opening_flash = 0.0
+	seu_ze_fan_started_msec = -1
+	seu_ze_fan_intro_done = false
 	opening_hint = "Toque no icone para registrar sua primeira memoria!"
 	player_pos = get_opening_spawn_pos()
 	player_dir = "right"
@@ -1818,6 +1831,25 @@ func draw_opening_seu_ze_on_map() -> void:
 
 
 func draw_seu_ze_sprite(pos: Vector2, draw_h: float) -> void:
+	if seu_ze_fan_texture != null:
+		var frame_index := get_seu_ze_fan_frame(is_seu_ze_visible_on_screen(pos, draw_h))
+		var cell_size := Vector2(
+			seu_ze_fan_texture.get_width() / float(SEU_ZE_FAN_COLUMNS),
+			seu_ze_fan_texture.get_height() / float(SEU_ZE_FAN_ROWS)
+		)
+		var frame_col := frame_index % SEU_ZE_FAN_COLUMNS
+		var frame_row := floori(float(frame_index) / float(SEU_ZE_FAN_COLUMNS))
+		var source := Rect2(
+			Vector2(
+				frame_col * cell_size.x + cell_size.x * SEU_ZE_FAN_CROP_X_RATIO,
+				frame_row * cell_size.y
+			),
+			Vector2(cell_size.x * SEU_ZE_FAN_CROP_WIDTH_RATIO, cell_size.y)
+		)
+		var draw_w := draw_h * (source.size.x / source.size.y)
+		var target := Rect2(pos + Vector2(-draw_w / 2.0, -draw_h + 16.0), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(seu_ze_fan_texture, target, source)
+		return
 	if seu_ze_idle_texture != null:
 		var frame_index := 0
 		if not active_dialog:
@@ -1842,6 +1874,35 @@ func draw_seu_ze_sprite(pos: Vector2, draw_h: float) -> void:
 		draw_texture_rect_region(seu_ze_sprite["texture"], target, region)
 		return
 	draw_npc(pos, "guaribas")
+
+
+func is_seu_ze_visible_on_screen(pos: Vector2, draw_h: float) -> bool:
+	if not running:
+		return false
+	var viewport := get_viewport_rect().size
+	var margin := draw_h * 0.7
+	return Rect2(Vector2(-margin, -draw_h - margin), viewport + Vector2(margin * 2.0, draw_h + margin * 2.0)).has_point(pos)
+
+
+func get_seu_ze_fan_frame(visible_on_screen: bool) -> int:
+	if not visible_on_screen:
+		return 0 if not seu_ze_fan_intro_done else SEU_ZE_FAN_LOOP_START_FRAME
+	var now := Time.get_ticks_msec()
+	if seu_ze_fan_started_msec < 0:
+		seu_ze_fan_started_msec = now
+	var elapsed := float(now - seu_ze_fan_started_msec) / 1000.0
+
+	if not seu_ze_fan_intro_done:
+		var intro_frame := int(floor(elapsed * SEU_ZE_FAN_FPS))
+		if intro_frame < SEU_ZE_FAN_LOOP_START_FRAME:
+			return intro_frame
+		seu_ze_fan_intro_done = true
+		seu_ze_fan_started_msec = now
+		return SEU_ZE_FAN_LOOP_START_FRAME
+
+	var loop_frame_count := SEU_ZE_FAN_FRAME_COUNT - SEU_ZE_FAN_LOOP_START_FRAME
+	var loop_elapsed := float(now - seu_ze_fan_started_msec) / 1000.0
+	return SEU_ZE_FAN_LOOP_START_FRAME + int(floor(loop_elapsed * SEU_ZE_FAN_FPS)) % loop_frame_count
 
 
 func draw_opening_map_guides() -> void:
