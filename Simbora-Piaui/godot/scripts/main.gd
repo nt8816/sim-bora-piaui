@@ -8,14 +8,11 @@ const OPENING_MISSION_ID := "boas_vindas_picos"
 const CHURCH_DRAW_W := 505.0
 const CHURCH_BASE_OFFSET := Vector2(-198, 71)
 const MENU_IMAGE_SIZE := Vector2(1694, 928)
-const SEU_ZE_FRAME_COLUMNS := 5
-const SEU_ZE_FRAME_ROWS := 8
-const SEU_ZE_FRAME_CANVAS_SIZE := Vector2i(96, 116)
-const SEU_ZE_FRAME_DRAW_SIZE := Vector2i(82, 110)
-const SEU_ZE_IDLE_COLUMNS := 8
+const SEU_ZE_IDLE_COLUMNS := 5
 const SEU_ZE_IDLE_ROWS := 8
-const SEU_ZE_IDLE_FRAME_COUNT := 61
-const SEU_ZE_IDLE_FPS := 12.0
+const SEU_ZE_IDLE_FRAME_COUNT := 40
+const SEU_ZE_IDLE_FRAME_SIZE := Vector2(96, 128)
+const SEU_ZE_IDLE_FPS := 8.0
 const CHARACTER_SHEETS: Dictionary = {
 	"male": "res://assets/personagem_masculino.png",
 	"female": "res://assets/personagem_feminina.png"
@@ -37,8 +34,7 @@ var picos_sign_texture: Texture2D = preload("res://assets/placa_picos.png")
 var asphalt_texture: Texture2D = preload("res://assets/asfalto.png")
 var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
 var seu_ze_texture: Texture2D = preload("res://assets/seu_ze_lendas.png")
-var seu_ze_animation_sheet: Texture2D = preload("res://assets/seu_ze_animacao_40_frames.png")
-var seu_ze_idle_sheet: Texture2D = preload("res://assets/seu_ze_idle_video.png")
+var seu_ze_idle_texture: Texture2D = preload("res://assets/seu_ze_idle_clean.png")
 var camera_texture: Texture2D = preload("res://assets/camera.png")
 var memory_polaroid_texture: Texture2D = preload("res://assets/memoria_picos_polaroid.png")
 var opening_music_stream: AudioStream = preload("res://assets/audio_abertura_picos.mp3")
@@ -68,8 +64,6 @@ var church_picos_sprite := {}
 var asphalt_curve_sprite := {}
 var camera_sprite := {}
 var seu_ze_sprite := {}
-var seu_ze_frames: Array[Texture2D] = []
-var seu_ze_idle_frames: Array[Texture2D] = []
 var water_sprites := []
 var hero_walk_frames := {
 	"right": [],
@@ -411,83 +405,9 @@ func load_special_sprites() -> void:
 	asphalt_curve_sprite = make_clean_sprite(asphalt_curve_texture, true)
 	camera_sprite = make_clean_sprite(camera_texture, true)
 	seu_ze_sprite = make_clean_sprite(seu_ze_texture, true)
-	load_seu_ze_animation_frames()
-	load_seu_ze_idle_frames()
 	water_sprites.clear()
 	for texture in water_textures:
 		water_sprites.append(make_clean_sprite(texture, true))
-
-
-func load_seu_ze_animation_frames() -> void:
-	seu_ze_frames.clear()
-	load_seu_ze_frames_from_sheet(seu_ze_animation_sheet, SEU_ZE_FRAME_COLUMNS, SEU_ZE_FRAME_ROWS, SEU_ZE_FRAME_COLUMNS * SEU_ZE_FRAME_ROWS, seu_ze_frames)
-
-
-func load_seu_ze_idle_frames() -> void:
-	seu_ze_idle_frames.clear()
-	load_seu_ze_frames_from_sheet(seu_ze_idle_sheet, SEU_ZE_IDLE_COLUMNS, SEU_ZE_IDLE_ROWS, SEU_ZE_IDLE_FRAME_COUNT, seu_ze_idle_frames)
-
-
-func load_seu_ze_frames_from_sheet(sheet: Texture2D, columns: int, rows: int, frame_count: int, target_frames: Array[Texture2D]) -> void:
-	var image := sheet.get_image()
-	if image == null:
-		return
-	image.convert(Image.FORMAT_RGBA8)
-
-	var frame_size := Vector2i(image.get_width() / columns, image.get_height() / rows)
-	for row in range(rows):
-		for column in range(columns):
-			if target_frames.size() >= frame_count:
-				return
-			var source := Rect2i(Vector2i(column * frame_size.x, row * frame_size.y), frame_size)
-			var frame := image.get_region(source)
-			var texture := build_seu_ze_frame_texture(frame)
-			if texture:
-				target_frames.append(texture)
-
-
-func build_seu_ze_frame_texture(frame: Image) -> Texture2D:
-	frame.convert(Image.FORMAT_RGBA8)
-	var min_x := frame.get_width()
-	var min_y := frame.get_height()
-	var max_x := 0
-	var max_y := 0
-	var scan_start_x := int(frame.get_width() * 0.04)
-	var scan_end_x := int(frame.get_width() * 0.96)
-	var scan_end_y := int(frame.get_height() * 0.96)
-
-	for y in range(frame.get_height()):
-		for x in range(frame.get_width()):
-			var color := frame.get_pixel(x, y)
-			var is_white_background := color.r > 0.94 and color.g > 0.94 and color.b > 0.94
-			if is_white_background:
-				color.a = 0.0
-				frame.set_pixel(x, y, color)
-			elif color.a > 0.03 and x >= scan_start_x and x < scan_end_x and y < scan_end_y:
-				min_x = mini(min_x, x)
-				min_y = mini(min_y, y)
-				max_x = maxi(max_x, x)
-				max_y = maxi(max_y, y)
-
-	if max_x < min_x or max_y < min_y:
-		return null
-
-	var pad := 16
-	var sx := maxi(0, min_x - pad)
-	var sy := maxi(0, min_y - pad)
-	var sw := mini(frame.get_width() - sx, max_x - min_x + pad * 2)
-	var sh := mini(frame.get_height() - sy, max_y - min_y + pad * 2)
-	frame = frame.get_region(Rect2i(Vector2i(sx, sy), Vector2i(sw, sh)))
-
-	var normalized := Image.create(SEU_ZE_FRAME_CANVAS_SIZE.x, SEU_ZE_FRAME_CANVAS_SIZE.y, false, Image.FORMAT_RGBA8)
-	normalized.fill(Color(0, 0, 0, 0))
-	var max_draw := SEU_ZE_FRAME_DRAW_SIZE
-	var scale := minf(float(max_draw.x) / float(frame.get_width()), float(max_draw.y) / float(frame.get_height()))
-	var fitted_size := Vector2i(maxi(1, roundi(frame.get_width() * scale)), maxi(1, roundi(frame.get_height() * scale)))
-	frame.resize(fitted_size.x, fitted_size.y, Image.INTERPOLATE_LANCZOS)
-	var paste_pos := Vector2i((normalized.get_width() - fitted_size.x) / 2, normalized.get_height() - fitted_size.y)
-	normalized.blit_rect(frame, Rect2i(Vector2i.ZERO, fitted_size), paste_pos)
-	return ImageTexture.create_from_image(normalized)
 
 
 func load_hero_walk_frames() -> void:
@@ -1890,24 +1810,30 @@ func _draw() -> void:
 
 func draw_opening_seu_ze_on_map() -> void:
 	var pos := get_seu_ze_pos() - camera_pos
-	draw_ellipse_shadow(pos + Vector2(0, 17), Vector2(22, 5), 0.18)
-	draw_seu_ze_sprite(pos, 116.0)
+	draw_ellipse_shadow(pos + Vector2(0, 17), Vector2(17, 4), 0.16)
+	draw_seu_ze_sprite(pos, 118.0)
 	if opening_active:
 		var pulse := sin(Time.get_ticks_msec() / 170.0) * 5.0
-		draw_string(ThemeDB.fallback_font, pos + Vector2(-9, -138 + pulse), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 42, Color("#ffc247"))
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-7, -102 + pulse), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("#ffc247"))
 
 
 func draw_seu_ze_sprite(pos: Vector2, draw_h: float) -> void:
-	var current_frames := seu_ze_idle_frames if not seu_ze_idle_frames.is_empty() else seu_ze_frames
-	if not current_frames.is_empty():
+	if seu_ze_idle_texture != null:
 		var frame_index := 0
 		if not active_dialog:
-			frame_index = int(Time.get_ticks_msec() / (1000.0 / SEU_ZE_IDLE_FPS)) % current_frames.size()
-		var texture := current_frames[frame_index]
-		var native_size := Vector2(texture.get_width(), texture.get_height())
-		var draw_size := native_size if abs(draw_h - native_size.y) < 16.0 else native_size * (draw_h / native_size.y)
-		var target := Rect2(pos + Vector2(-draw_size.x / 2.0, -draw_size.y + 16.0), draw_size)
-		draw_texture_rect(texture, target, false)
+			frame_index = int(Time.get_ticks_msec() / (1000.0 / SEU_ZE_IDLE_FPS)) % SEU_ZE_IDLE_FRAME_COUNT
+		var frame_col := frame_index % SEU_ZE_IDLE_COLUMNS
+		var frame_row := floori(float(frame_index) / float(SEU_ZE_IDLE_COLUMNS))
+		var source := Rect2(
+			Vector2(
+				float(frame_col) * SEU_ZE_IDLE_FRAME_SIZE.x,
+				float(frame_row) * SEU_ZE_IDLE_FRAME_SIZE.y
+			),
+			SEU_ZE_IDLE_FRAME_SIZE
+		)
+		var draw_w := draw_h * (SEU_ZE_IDLE_FRAME_SIZE.x / SEU_ZE_IDLE_FRAME_SIZE.y)
+		var target := Rect2(pos + Vector2(-draw_w / 2.0, -draw_h + 16.0), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(seu_ze_idle_texture, target, source)
 		return
 	if not seu_ze_sprite.is_empty():
 		var region: Rect2 = seu_ze_sprite["region"]
@@ -2091,9 +2017,9 @@ func draw_opening_seu_ze() -> void:
 	draw_rect(Rect2(pos + Vector2(-86, -38), Vector2(154, 18)), Color("#744325"), true)
 	draw_rect(Rect2(pos + Vector2(-74, -26), Vector2(16, 42)), Color("#744325"), true)
 	draw_rect(Rect2(pos + Vector2(42, -26), Vector2(16, 42)), Color("#744325"), true)
-	draw_seu_ze_sprite(pos + Vector2(0, -18), 142.0)
+	draw_seu_ze_sprite(pos + Vector2(0, -18), 132.0)
 	if opening_phase == "meet":
-		draw_string(ThemeDB.fallback_font, pos + Vector2(-9, -222 + sin(opening_time * 5.0) * 5.0), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 42, Color("#ffc247"))
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-7, -174 + sin(opening_time * 5.0) * 5.0), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("#ffc247"))
 
 
 func draw_opening_ui(viewport: Vector2) -> void:
