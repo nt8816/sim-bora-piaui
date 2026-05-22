@@ -2,6 +2,7 @@ extends Node2D
 
 const TILE := 48
 const WORLD_W := 66
+const WORLD_TOP_TILE := -8
 const WORLD_H := 30
 const PLAYER_SPEED := 150.0
 const OPENING_MISSION_ID := "boas_vindas_picos"
@@ -321,9 +322,9 @@ func select_character(character_id: String) -> void:
 
 func build_world() -> void:
 	for x in range(WORLD_W):
-		add_solid(x, 0)
+		add_solid(x, WORLD_TOP_TILE)
 		add_solid(x, WORLD_H - 1)
-	for y in range(WORLD_H):
+	for y in range(WORLD_TOP_TILE, WORLD_H):
 		add_solid(0, y)
 		add_solid(WORLD_W - 1, y)
 
@@ -835,7 +836,7 @@ func add_picos_district(sx: int, sy: int) -> void:
 	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
-	add_feira_horizontal(picos_church_plaza_tile.x + 2, picos_church_plaza_tile.y + 1)
+	add_feira_horizontal(picos_church_tile.x + 5, picos_church_plaza_tile.y - 9)
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
 
 
@@ -902,8 +903,10 @@ func add_church_collision(sx: int, sy: int) -> void:
 func add_feira_horizontal(sx: int, sy: int) -> void:
 	var roupas_tile := Vector2i(sx, sy)
 	var bancas_tile := Vector2i(sx, sy + 6)
+	var vertical_tile := Vector2i(sx + 21, sy - 1)
 	props.append({"type": "feira_roupas_horizontal", "tile": roupas_tile})
 	props.append({"type": "feira_bancas_horizontal", "tile": bancas_tile})
+	add_feira_adaptada(vertical_tile.x, vertical_tile.y)
 	add_feira_horizontal_collision(roupas_tile, "roupas")
 	add_feira_horizontal_collision(bancas_tile, "bancas")
 
@@ -911,14 +914,18 @@ func add_feira_horizontal(sx: int, sy: int) -> void:
 func add_feira_horizontal_collision(tile: Vector2i, variant: String) -> void:
 	var world := Vector2(tile) * TILE
 	if variant == "roupas":
-		solid_rects.append(Rect2(world + Vector2(14, 58), Vector2(696, 146)))
+		solid_rects.append(Rect2(world + Vector2(0, 18), Vector2(900, 94)))
+		solid_rects.append(Rect2(world + Vector2(0, 112), Vector2(900, 96)))
 	else:
-		solid_rects.append(Rect2(world + Vector2(14, 58), Vector2(730, 174)))
+		solid_rects.append(Rect2(world + Vector2(0, 18), Vector2(805, 92)))
+		solid_rects.append(Rect2(world + Vector2(0, 110), Vector2(805, 92)))
 
 
 func add_feira_adaptada(sx: int, sy: int) -> void:
 	var tile := Vector2i(sx, sy)
 	props.append({"type": "feira_adaptada", "tile": tile})
+	var world := Vector2(tile) * TILE
+	solid_rects.append(Rect2(world + Vector2(-106, -12), Vector2(260, 382)))
 
 
 func add_picos_market(sx: int, sy: int) -> void:
@@ -1015,7 +1022,7 @@ func setup_opening_spawn() -> void:
 	var viewport := get_viewport_rect().size
 	camera_pos = player_pos - viewport / 2.0
 	camera_pos.x = clampf(camera_pos.x, 0.0, WORLD_W * TILE - viewport.x)
-	camera_pos.y = clampf(camera_pos.y, 0.0, WORLD_H * TILE - viewport.y)
+	camera_pos.y = clampf(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 
 
 func get_opening_spawn_pos() -> Vector2:
@@ -1080,7 +1087,7 @@ func update_opening(delta: float) -> void:
 	var target := player_pos - viewport / 2.0
 	camera_pos = camera_pos.lerp(target, 0.12)
 	camera_pos.x = clampf(camera_pos.x, 0.0, WORLD_W * TILE - viewport.x)
-	camera_pos.y = clampf(camera_pos.y, 0.0, WORLD_H * TILE - viewport.y)
+	camera_pos.y = clampf(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 	place_label.text = "Picos"
 	if hint_label:
 		hint_label.visible = false
@@ -1197,7 +1204,7 @@ func update_player(delta: float) -> void:
 	var target := player_pos - viewport / 2.0
 	camera_pos = camera_pos.lerp(target, 0.12)
 	camera_pos.x = clamp(camera_pos.x, 0, WORLD_W * TILE - viewport.x)
-	camera_pos.y = clamp(camera_pos.y, 0, WORLD_H * TILE - viewport.y)
+	camera_pos.y = clamp(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 
 	place_label.text = "Picos"
 	if hint_label:
@@ -2762,7 +2769,7 @@ func world_pos(pos: Vector2) -> Vector2:
 
 func draw_ground() -> void:
 	for x in range(WORLD_W):
-		for y in range(WORLD_H):
+		for y in range(WORLD_TOP_TILE, WORLD_H):
 			var key := tile_key(x, y)
 			var dry := y > 20 or x > 26
 			var shade := float(((x * 17 + y * 29) % 7) - 3) * 0.018
@@ -3203,7 +3210,7 @@ func draw_feira_horizontal(pos: Vector2, variant: String) -> void:
 		draw_market_stall(pos, 0)
 		return
 	var region: Rect2 = sprite["region"]
-	var draw_w := 720.0 if variant == "roupas" else 760.0
+	var draw_w := 900.0 if variant == "roupas" else 805.0
 	var draw_h := draw_w * (region.size.y / region.size.x)
 	draw_ellipse_shadow(pos + Vector2(draw_w * 0.5, draw_h - 6), Vector2(draw_w * 0.38, 11), 0.13)
 	var target := Rect2(pos, Vector2(draw_w, draw_h))
