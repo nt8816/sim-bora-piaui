@@ -5,6 +5,10 @@ const WORLD_W := 66
 const WORLD_H := 30
 const PLAYER_SPEED := 150.0
 const OPENING_MISSION_ID := "boas_vindas_picos"
+const PHASE1_ACCEPTED_ID := "fase1_diario_aceita"
+const PHASE1_DONE_ID := "fase1_diario_concluida"
+const PAGE_FEIRA_ID := "pagina_diario_feira"
+const PAGE_MUSEU_ID := "pagina_diario_museu"
 const CHURCH_DRAW_W := 505.0
 const CHURCH_BASE_OFFSET := Vector2(-198, 71)
 const MENU_IMAGE_SIZE := Vector2(1694, 928)
@@ -93,7 +97,12 @@ var opening_player_x := -90.0
 var opening_player_y := 0.0
 var opening_memory_open := false
 var opening_ze_ready := false
-var opening_hint := "Toque no icone para registrar sua primeira memoria!"
+var opening_camera_collected := false
+var opening_script_active := false
+var opening_script_index := 0
+var phase1_reward_active := false
+var phase1_reward_index := 0
+var opening_hint := "Toque no ícone para registrar sua primeira memória!"
 var opening_flash := 0.0
 var seu_ze_fan_started_msec := -1
 var seu_ze_fan_intro_done := false
@@ -118,7 +127,7 @@ var redeemed := {}
 var outfits := {
 	"explorador": {"name": "Explorador", "color": Color("#d96b28"), "description": "Camisa laranja clássica da jornada."},
 	"rio": {"name": "Azul de Picos", "color": Color("#1b79b5"), "description": "Azul inspirado na cidade."},
-	"serra": {"name": "Caatinga de Picos", "color": Color("#2f8b4f"), "description": "Verde para trilhas e paisagens do municipio."},
+	"serra": {"name": "Caatinga de Picos", "color": Color("#2f8b4f"), "description": "Verde para trilhas e paisagens do município."},
 	"festa": {"name": "Festa Popular", "color": Color("#c7333f"), "description": "Vermelho vivo para a cultura popular."}
 }
 
@@ -136,10 +145,46 @@ var missions := []
 var opening_mission := {
 	"id": OPENING_MISSION_ID,
 	"name": "Bem-vindo a Picos",
-	"npc": "Seu Ze das Lendas",
-	"item": "Primeira Memoria",
-	"fact": "Voce sabia? Picos e um dos maiores entroncamentos rodoviarios do Nordeste e e famosa nacionalmente como a Capital do Mel!"
+	"npc": "Seu Zé das Lendas",
+	"item": "Primeira Memória",
+	"fact": "Você sabia? Picos é um dos maiores entroncamentos rodoviários do Nordeste e é famosa nacionalmente como a Capital do Mel!"
 }
+var opening_script_lines := [
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Opa, meu jovem! Seja muito bem-vindo à nossa querida Picos! Está sentindo esse cheirinho doce no ar? Não é à toa que nos chamam de a Capital do Mel."
+	},
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Aproveite a sombra aqui da nossa imponente Igreja Matriz. Ela é o coração da cidade há muitas gerações. Eu venho aqui todos os dias anotar as histórias que os mais velhos contam."
+	},
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Mas hoje o vento soprou forte demais! Uma ventania daquelas espalhou as páginas do meu Diário das Raízes por toda a cidade."
+	},
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Eu já não tenho as pernas tão rápidas quanto as suas. Você poderia me ajudar a recuperar essas páginas? Uma voou para a Feira Livre e outra foi parar perto do Museu Ozildo Albano."
+	},
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Se você trouxer as páginas, eu compartilho os segredos escritos nelas e te dou um item especial para ajudar na jornada pelo Piauí. O que me diz? SIM-BORA?"
+	}
+]
+var phase1_reward_lines := [
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Ah, meu jovem, você encontrou as páginas! Agora o Diário das Raízes pode respirar de novo."
+	},
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Aqui está o segredo: Picos cresceu como ponto de encontro, de passagem e de trabalho. Das estradas ao mel, muita gente ajudou a construir essa história."
+	},
+	{
+		"speaker": "Seu Zé das Lendas",
+		"text": "Receba este Marcador de Memórias. Ele vai lembrar você de olhar para cada canto com atenção. Fase 1 concluída!"
+	}
+]
 
 var hud_layer: CanvasLayer
 var start_layer: CanvasLayer
@@ -147,15 +192,21 @@ var dialog_panel: PanelContainer
 var dialog_title: Label
 var dialog_text: Label
 var answer_box: VBoxContainer
+var dialog_full_text := ""
+var dialog_type_time := 0.0
+var dialog_typewriter_done := true
+var typewriter_font: Font
 var score_label: Label
 var place_label: Label
 var hint_label: Label
+var hint_panel: PanelContainer
 var bag_button: Button
 var collection_panel: PanelContainer
 var collection_list: VBoxContainer
 var menu_modal: PanelContainer
 var menu_modal_title: Label
 var menu_modal_body: VBoxContainer
+var memory_continue_button: Button
 var touch_ui: Control
 var menu_root: Control
 var menu_hitbox_buttons := []
@@ -192,6 +243,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	update_dialog_typewriter(delta)
 	if running and not active_dialog and not collection_panel.visible:
 		if opening_active:
 			update_opening(delta)
@@ -587,6 +639,7 @@ func add_picos_district(sx: int, sy: int) -> void:
 	add_picos_market(sx - 11, sy + 6)
 	add_picos_church(picos_church_tile.x, picos_church_tile.y)
 	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
+	add_phase1_diary_pages()
 	clear_church_plaza_props()
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
 
@@ -651,6 +704,29 @@ func add_picos_market(sx: int, sy: int) -> void:
 		props.append({"type": "produce_crate", "tile": Vector2i(sx, sy) + offset, "variant": abs(offset.x + offset.y) % 3})
 
 
+func add_phase1_diary_pages() -> void:
+	missions.append({
+		"id": PAGE_FEIRA_ID,
+		"name": "Página na Feira Livre",
+		"npc": "Diário das Raízes",
+		"item": "Página da Feira Livre",
+		"fact": "A Feira Livre de Picos guarda encontros, trabalho e sabores que ajudam a contar a economia e a vida cotidiana da cidade.",
+		"tile": Vector2i(picos_district_tile.x - 12, picos_district_tile.y + 11),
+		"type": "diary_page",
+		"requires": PHASE1_ACCEPTED_ID
+	})
+	missions.append({
+		"id": PAGE_MUSEU_ID,
+		"name": "Página no Museu Ozildo Albano",
+		"npc": "Diário das Raízes",
+		"item": "Página do Museu",
+		"fact": "O Museu Ozildo Albano preserva memórias, objetos e registros que ajudam a cidade a reconhecer sua própria história.",
+		"tile": ozildo_museum_tile + Vector2i(1, 4),
+		"type": "diary_page",
+		"requires": PHASE1_ACCEPTED_ID
+	})
+
+
 func add_solid(x: int, y: int) -> void:
 	solids[tile_key(x, y)] = true
 
@@ -677,10 +753,16 @@ func setup_opening_spawn() -> void:
 	opening_time = 0.0
 	opening_memory_open = false
 	opening_ze_ready = false
+	opening_camera_collected = false
+	opening_script_active = false
+	opening_script_index = 0
+	phase1_reward_active = false
+	phase1_reward_index = 0
 	opening_flash = 0.0
 	seu_ze_fan_started_msec = -1
 	seu_ze_fan_intro_done = false
-	opening_hint = "Toque no icone para registrar sua primeira memoria!"
+	opening_hint = "Toque no ícone para registrar sua primeira memória!"
+	update_memory_continue_button()
 	player_pos = get_opening_spawn_pos()
 	player_dir = "right"
 	walk_time = 0.0
@@ -693,6 +775,10 @@ func setup_opening_spawn() -> void:
 func get_opening_spawn_pos() -> Vector2:
 	# Primeiro ponto jogável da estrada principal, antes do letreiro de Picos aparecer ao centro da tela.
 	return Vector2(2.4 * TILE, 26.5 * TILE)
+
+
+func get_opening_camera_pos() -> Vector2:
+	return get_opening_spawn_pos() + Vector2(138, -8)
 
 
 func get_seu_ze_pos() -> Vector2:
@@ -711,7 +797,8 @@ func update_opening(delta: float) -> void:
 		if opening_time >= 1.25:
 			opening_phase = "photo"
 			opening_time = 0.0
-	elif opening_phase in ["walk", "meet"]:
+			opening_hint = "Pegue a câmera no caminho para registrar sua primeira memória."
+	elif opening_phase in ["photo", "walk", "meet"]:
 		var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		move += touch_vector
 		if touch_buttons.get("left", false):
@@ -735,9 +822,13 @@ func update_opening(delta: float) -> void:
 		else:
 			walk_time = 0.0
 
-		opening_ze_ready = player_pos.distance_to(get_seu_ze_pos()) < 125.0
-		opening_phase = "meet" if opening_ze_ready else "walk"
-		opening_hint = "Aperte F para falar com Seu Ze." if opening_ze_ready else "Siga as abelhas ate a porta direita da igreja."
+		if opening_phase == "photo":
+			var near_camera := player_pos.distance_to(get_opening_camera_pos()) < 58.0
+			opening_hint = "Aperte F para pegar a câmera." if near_camera else "Pegue a câmera no caminho."
+		else:
+			opening_ze_ready = player_pos.distance_to(get_seu_ze_pos()) < 125.0
+			opening_phase = "meet" if opening_ze_ready else "walk"
+			opening_hint = "Aperte F para falar com Seu Zé." if opening_ze_ready else "Siga a trilha das abelhas até a porta direita da igreja."
 
 	var viewport := get_viewport_rect().size
 	var target := player_pos - viewport / 2.0
@@ -747,40 +838,46 @@ func update_opening(delta: float) -> void:
 	place_label.text = "Picos"
 	if hint_label:
 		hint_label.visible = false
+	if hint_panel:
+		hint_panel.visible = false
 
 func handle_opening_pointer(screen_pos: Vector2) -> bool:
 	if opening_memory_open:
-		close_opening_memory()
-		return true
-	if opening_phase == "photo" and get_camera_icon_rect().has_point(screen_pos):
-		take_opening_photo()
+		return false
+	if opening_phase == "photo" and get_opening_camera_collect_rect().has_point(screen_pos):
+		collect_opening_camera()
 		return true
 	return false
 
 
 func interact_opening() -> void:
 	if active_dialog:
-		close_dialog()
+		advance_or_close_dialog()
 		return
 	if opening_memory_open:
-		close_opening_memory()
 		return
 	if opening_phase == "photo":
-		take_opening_photo()
+		if player_pos.distance_to(get_opening_camera_pos()) < 58.0:
+			collect_opening_camera()
+		else:
+			opening_hint = "Chegue mais perto da câmera para pegar."
 		return
 	if opening_phase == "meet" and opening_ze_ready:
-		show_dialog("Seu Ze das Lendas - Bem-vindo a Picos", "Opa, meu jovem! Seja muito bem-vindo a nossa querida Picos. Aqui cada rua tem uma historia e cada parada guarda um saber. Vamos comecar sua jornada pelo coracao da cidade?", [])
-		learned[OPENING_MISSION_ID] = true
-		save_progress()
-		update_hud()
-		opening_active = false
+		start_opening_script()
+
+
+func collect_opening_camera() -> void:
+	opening_camera_collected = true
+	take_opening_photo()
 
 
 func take_opening_photo() -> void:
 	opening_memory_open = true
 	opening_flash = 1.0
-	opening_hint = "Nova Memoria Adicionada ao Diario de Bordo!"
+	opening_hint = "Nova Memória adicionada ao Diário de Bordo!"
 	play_camera_sound()
+	update_touch_controls_visibility()
+	update_memory_continue_button()
 
 
 func close_opening_memory() -> void:
@@ -788,6 +885,8 @@ func close_opening_memory() -> void:
 	opening_phase = "walk"
 	opening_time = 0.0
 	opening_hint = "Use as setas ou arraste o dedo para caminhar e explorar a cidade."
+	update_touch_controls_visibility()
+	update_memory_continue_button()
 
 
 func play_camera_sound() -> void:
@@ -816,6 +915,10 @@ func get_camera_icon_rect() -> Rect2:
 	var x := clampf(player_screen.x + 18.0, 18.0, viewport.x - 90.0)
 	var y := clampf(player_screen.y - 148.0, 70.0, viewport.y - 170.0)
 	return Rect2(Vector2(x, y), Vector2(70, 62))
+
+
+func get_opening_camera_collect_rect() -> Rect2:
+	return Rect2(get_opening_camera_pos() - camera_pos + Vector2(-28, -46), Vector2(56, 52))
 
 
 func update_player(delta: float) -> void:
@@ -853,6 +956,8 @@ func update_player(delta: float) -> void:
 	place_label.text = "Picos"
 	if hint_label:
 		hint_label.visible = false
+	if hint_panel:
+		hint_panel.visible = false
 
 
 func move_player(delta_pos: Vector2) -> void:
@@ -904,6 +1009,8 @@ func nearest_mission() -> Variant:
 	var best: Variant = null
 	var best_dist := INF
 	for mission in missions:
+		if mission.has("requires") and not learned.has(mission["requires"]):
+			continue
 		var pos: Vector2 = Vector2(mission["tile"]) * TILE
 		var dist := player_pos.distance_to(pos)
 		if dist < best_dist:
@@ -914,6 +1021,10 @@ func nearest_mission() -> Variant:
 	return null
 
 
+func near_seu_ze() -> bool:
+	return player_pos.distance_to(get_seu_ze_pos()) < 125.0
+
+
 func interact() -> void:
 	if collection_panel.visible:
 		return
@@ -921,7 +1032,10 @@ func interact() -> void:
 		interact_opening()
 		return
 	if active_dialog:
-		close_dialog()
+		advance_or_close_dialog()
+		return
+	if near_seu_ze():
+		interact_seu_ze_phase1()
 		return
 
 	var mission: Variant = nearest_mission()
@@ -931,32 +1045,53 @@ func interact() -> void:
 	if learned.has(mission["id"]):
 		show_dialog(mission["name"], "%s Item já coletado: %s." % [mission["fact"], mission["item"]], [])
 		return
+	if String(mission.get("type", "")) == "diary_page":
+		collect_diary_page(mission)
+		return
 	show_mission_intro(mission)
 
 
+func collect_diary_page(mission: Dictionary) -> void:
+	learned[mission["id"]] = true
+	save_progress()
+	update_hud()
+	show_dialog(mission["item"], "%s\n\nLeve esta página de volta para Seu Zé quando encontrar todas." % mission["fact"], [])
+
+
+func interact_seu_ze_phase1() -> void:
+	if not learned.has(PHASE1_ACCEPTED_ID):
+		start_opening_script()
+		return
+	if learned.has(PHASE1_DONE_ID):
+		show_dialog("Seu Zé das Lendas", "Você já recuperou o Diário das Raízes. Agora siga olhando Picos com carinho: cada canto ainda tem história para contar.", [])
+		return
+	if has_all_phase1_pages():
+		start_phase1_reward()
+		return
+	show_dialog("Seu Zé das Lendas", "A Feira Livre costuma ser bem movimentada; procure com atenção por lá! A outra página deve estar perto do Museu Ozildo Albano.", [])
+
+
+func has_all_phase1_pages() -> bool:
+	return learned.has(PAGE_FEIRA_ID) and learned.has(PAGE_MUSEU_ID)
+
+
 func show_mission_intro(mission: Dictionary) -> void:
-	active_dialog = true
 	active_mission = mission
-	dialog_title.text = "Missão - %s" % mission["name"]
-	dialog_text.text = "Objetivo: %s\n\nO que fazer: leia a pista cultural e responda ao desafio para desbloquear o item \"%s\"." % [mission["objective"], mission["item"]]
 	clear_answers()
 	var start := make_button("Iniciar desafio")
 	start.pressed.connect(func(): show_quiz(mission))
 	answer_box.add_child(start)
-	dialog_panel.visible = true
+	open_dialog("Missão - %s" % mission["name"], "Objetivo: %s\n\nO que fazer: leia a pista cultural e responda ao desafio para desbloquear o item \"%s\"." % [mission["objective"], mission["item"]])
 
 
 func show_quiz(mission: Dictionary) -> void:
-	active_dialog = true
 	active_mission = mission
-	dialog_title.text = "%s - %s" % [mission["npc"], mission["name"]]
-	dialog_text.text = mission["question"]
 	clear_answers()
 	for i in range(mission["options"].size()):
 		var button := make_button(mission["options"][i])
 		button.pressed.connect(func(): answer_mission(mission, i))
 		answer_box.add_child(button)
-	dialog_panel.visible = true
+	open_dialog("%s - %s" % [mission["npc"], mission["name"]], mission["question"])
 
 
 func answer_mission(mission: Dictionary, index: int) -> void:
@@ -970,21 +1105,138 @@ func answer_mission(mission: Dictionary, index: int) -> void:
 
 
 func show_dialog(title: String, text: String, _buttons: Array) -> void:
-	active_dialog = true
 	active_mission = null
-	dialog_title.text = title
-	dialog_text.text = text
 	clear_answers()
 	var button := make_button("Continuar")
 	button.pressed.connect(close_dialog)
 	answer_box.add_child(button)
+	open_dialog(title, text)
+
+
+func start_opening_script() -> void:
+	opening_script_active = true
+	opening_script_index = 0
+	show_opening_script_line()
+
+
+func show_opening_script_line() -> void:
+	if opening_script_index >= opening_script_lines.size():
+		finish_opening_script()
+		return
+	var line: Dictionary = opening_script_lines[opening_script_index]
+	clear_answers()
+	var button := make_button("Continuar")
+	button.pressed.connect(advance_opening_script)
+	answer_box.add_child(button)
+	open_dialog(String(line["speaker"]), String(line["text"]))
+
+
+func advance_opening_script() -> void:
+	if not dialog_typewriter_done:
+		dialog_typewriter_done = true
+		dialog_text.visible_characters = -1
+		answer_box.visible = true
+		return
+	opening_script_index += 1
+	show_opening_script_line()
+
+
+func finish_opening_script() -> void:
+	opening_script_active = false
+	close_dialog()
+	learned[OPENING_MISSION_ID] = true
+	learned[PHASE1_ACCEPTED_ID] = true
+	save_progress()
+	update_hud()
+	opening_active = false
+	show_dialog("Missão aceita", "Objetivo: recuperar as páginas do Diário das Raízes na Feira Livre e perto do Museu Ozildo Albano.", [])
+
+
+func start_phase1_reward() -> void:
+	phase1_reward_active = true
+	phase1_reward_index = 0
+	show_phase1_reward_line()
+
+
+func show_phase1_reward_line() -> void:
+	if phase1_reward_index >= phase1_reward_lines.size():
+		finish_phase1_reward()
+		return
+	var line: Dictionary = phase1_reward_lines[phase1_reward_index]
+	clear_answers()
+	var button := make_button("Continuar")
+	button.pressed.connect(advance_phase1_reward)
+	answer_box.add_child(button)
+	open_dialog(String(line["speaker"]), String(line["text"]))
+
+
+func advance_phase1_reward() -> void:
+	if not dialog_typewriter_done:
+		dialog_typewriter_done = true
+		dialog_text.visible_characters = -1
+		answer_box.visible = true
+		return
+	phase1_reward_index += 1
+	show_phase1_reward_line()
+
+
+func finish_phase1_reward() -> void:
+	phase1_reward_active = false
+	close_dialog()
+	learned[PHASE1_DONE_ID] = true
+	save_progress()
+	update_hud()
+	show_dialog("Marcador de Memórias desbloqueado", "Item especial recebido: Marcador de Memórias. Caminho liberado para a próxima fase.", [])
+
+
+func open_dialog(title: String, text: String) -> void:
+	active_dialog = true
+	dialog_title.text = title
+	dialog_full_text = text
+	dialog_type_time = 0.0
+	dialog_typewriter_done = false
+	dialog_text.text = dialog_full_text
+	dialog_text.visible_characters = 0
+	answer_box.visible = false
 	dialog_panel.visible = true
+	update_touch_controls_visibility()
+
+
+func update_dialog_typewriter(delta: float) -> void:
+	if not active_dialog or dialog_typewriter_done:
+		return
+	dialog_type_time += delta
+	var target_chars := int(floor(dialog_type_time * 42.0))
+	dialog_text.visible_characters = clampi(target_chars, 0, dialog_full_text.length())
+	if dialog_text.visible_characters >= dialog_full_text.length():
+		dialog_typewriter_done = true
+		dialog_text.visible_characters = -1
+		answer_box.visible = true
 
 
 func close_dialog() -> void:
 	active_dialog = false
 	active_mission = null
+	dialog_typewriter_done = true
+	dialog_text.visible_characters = -1
+	answer_box.visible = true
 	dialog_panel.visible = false
+	update_touch_controls_visibility()
+
+
+func advance_or_close_dialog() -> void:
+	if opening_script_active:
+		advance_opening_script()
+		return
+	if phase1_reward_active:
+		advance_phase1_reward()
+		return
+	if not dialog_typewriter_done:
+		dialog_typewriter_done = true
+		dialog_text.visible_characters = -1
+		answer_box.visible = true
+		return
+	close_dialog()
 
 
 func toggle_collection() -> void:
@@ -992,6 +1244,7 @@ func toggle_collection() -> void:
 	collection_panel.visible = not collection_panel.visible
 	if bag_button:
 		bag_button.text = "Fechar" if collection_panel.visible else "Mochila"
+	update_touch_controls_visibility()
 
 
 func clear_answers() -> void:
@@ -1045,9 +1298,24 @@ func apply_settings() -> void:
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), linear_to_db(maxf(float(settings["music_volume"]) / 100.0, 0.001)))
 	if camera_sound_player:
 		camera_sound_player.volume_db = linear_to_db(maxf(float(settings["sfx_volume"]) / 100.0, 0.001))
-	if touch_ui:
-		touch_ui.visible = bool(settings["touch_controls"])
+	update_touch_controls_visibility()
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if bool(settings["fullscreen"]) else DisplayServer.WINDOW_MODE_MAXIMIZED)
+
+
+func update_touch_controls_visibility() -> void:
+	if not touch_ui:
+		return
+	touch_ui.visible = bool(settings["touch_controls"]) and running and not active_dialog and not opening_memory_open and not collection_panel.visible
+	if not touch_ui.visible:
+		touch_vector = Vector2.ZERO
+		touch_buttons.clear()
+
+
+func update_memory_continue_button() -> void:
+	if memory_continue_button:
+		memory_continue_button.visible = opening_memory_open
+	if bag_button:
+		bag_button.visible = not opening_memory_open
 
 
 func update_hud() -> void:
@@ -1111,7 +1379,8 @@ func build_ui() -> void:
 	hint_label = make_label("", 16)
 	hint_label.visible = false
 	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var hint_panel := wrap_panel(hint_label, Vector2(520, 42))
+	hint_panel = wrap_panel(hint_label, Vector2(520, 42))
+	hint_panel.visible = false
 	hint_panel.anchor_left = 0.5
 	hint_panel.anchor_top = 1
 	hint_panel.anchor_right = 0.5
@@ -1136,6 +1405,7 @@ func build_ui() -> void:
 	build_dialog_ui()
 	build_collection_ui()
 	build_touch_ui()
+	build_memory_continue_ui()
 	build_start_ui()
 	build_menu_modal()
 
@@ -1323,6 +1593,9 @@ func start_journey(button: Button = null) -> void:
 	if opening_music_player and not opening_music_player.playing:
 		opening_music_player.play()
 	hint_label.visible = false
+	if hint_panel:
+		hint_panel.visible = false
+	update_touch_controls_visibility()
 
 
 func build_menu_modal() -> void:
@@ -1532,6 +1805,7 @@ func select_outfit(outfit_id: String) -> void:
 
 
 func build_dialog_ui() -> void:
+	typewriter_font = make_typewriter_font()
 	dialog_panel = PanelContainer.new()
 	dialog_panel.visible = false
 	dialog_panel.anchor_left = 0.5
@@ -1556,16 +1830,25 @@ func build_dialog_ui() -> void:
 	margin.add_child(box)
 
 	dialog_title = make_label("", 18)
+	dialog_title.add_theme_font_override("font", typewriter_font)
 	dialog_title.add_theme_color_override("font_color", Color(1, 0.78, 0.28))
 	box.add_child(dialog_title)
 
 	dialog_text = make_label("", 16)
+	dialog_text.add_theme_font_override("font", typewriter_font)
+	dialog_text.add_theme_constant_override("line_spacing", 4)
 	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(dialog_text)
 
 	answer_box = VBoxContainer.new()
 	answer_box.add_theme_constant_override("separation", 8)
 	box.add_child(answer_box)
+
+
+func make_typewriter_font() -> Font:
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(["monospace", "Courier New", "Courier", "DejaVu Sans Mono"])
+	return font
 
 
 func build_collection_ui() -> void:
@@ -1648,6 +1931,22 @@ func build_touch_ui() -> void:
 	apply_action_button_style(action)
 	action.pressed.connect(interact)
 	touch_ui.add_child(action)
+
+
+func build_memory_continue_ui() -> void:
+	memory_continue_button = make_button("Continuar")
+	memory_continue_button.visible = false
+	memory_continue_button.anchor_left = 1
+	memory_continue_button.anchor_top = 1
+	memory_continue_button.anchor_right = 1
+	memory_continue_button.anchor_bottom = 1
+	memory_continue_button.offset_left = -168
+	memory_continue_button.offset_top = -72
+	memory_continue_button.offset_right = -28
+	memory_continue_button.offset_bottom = -24
+	apply_gold_button_style(memory_continue_button, 18)
+	memory_continue_button.pressed.connect(close_opening_memory)
+	hud_layer.add_child(memory_continue_button)
 
 
 func add_touch_button(parent: GridContainer, action_name: String, text: String) -> void:
@@ -1825,9 +2124,19 @@ func draw_opening_seu_ze_on_map() -> void:
 	var pos := get_seu_ze_pos() - camera_pos
 	draw_ellipse_shadow(pos + Vector2(0, 17), Vector2(17, 4), 0.16)
 	draw_seu_ze_sprite(pos, 118.0)
-	if opening_active:
+	if should_show_seu_ze_marker():
 		var pulse := sin(Time.get_ticks_msec() / 170.0) * 5.0
 		draw_string(ThemeDB.fallback_font, pos + Vector2(-7, -102 + pulse), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("#ffc247"))
+
+
+func should_show_seu_ze_marker() -> bool:
+	if opening_active:
+		return true
+	if not learned.has(PHASE1_ACCEPTED_ID):
+		return true
+	if learned.has(PHASE1_DONE_ID):
+		return false
+	return has_all_phase1_pages()
 
 
 func draw_seu_ze_sprite(pos: Vector2, draw_h: float) -> void:
@@ -1912,7 +2221,7 @@ func draw_opening_map_guides() -> void:
 	elif opening_memory_open:
 		draw_opening_memory_card(viewport)
 	elif opening_phase == "photo":
-		draw_camera_icon()
+		draw_opening_camera_collectible()
 		draw_opening_hint(opening_hint, viewport)
 	elif opening_phase in ["walk", "meet"]:
 		draw_bee_path_to_church()
@@ -1932,15 +2241,15 @@ func draw_opening_appear_effect(viewport: Vector2) -> void:
 
 func draw_bee_path_to_church() -> void:
 	var start := player_pos.lerp(get_seu_ze_pos(), 0.24)
-	var finish := get_seu_ze_pos()
-	for i in range(8):
-		var t := float(i) / 7.0
-		var world := start.lerp(finish, t) + Vector2(0, -70 + sin(opening_time * 4.0 + i) * 18.0)
-		var pos := world - camera_pos + Vector2(sin(opening_time * 3.0 + i) * 12.0, 0)
-		draw_circle(pos, 7, Color("#ffc247"))
-		draw_rect(Rect2(pos + Vector2(-2, -6), Vector2(3, 12)), Color("#3a1c11"), true)
-		draw_circle(pos + Vector2(-5, -7), 5, Color(1, 1, 1, 0.68))
-		draw_circle(pos + Vector2(5, -7), 5, Color(1, 1, 1, 0.68))
+	var finish := get_seu_ze_pos() + Vector2(-120, -26)
+	for i in range(4):
+		var t := 0.22 + float(i) * 0.16
+		var world := start.lerp(finish, t) + Vector2(0, -92 + sin(opening_time * 2.4 + i) * 7.0)
+		var pos := world - camera_pos + Vector2(sin(opening_time * 2.1 + i) * 5.0, 0)
+		draw_circle(pos, 4.0, Color(1.0, 0.76, 0.25, 0.48))
+		draw_rect(Rect2(pos + Vector2(-1, -3), Vector2(2, 6)), Color(0.23, 0.11, 0.07, 0.32), true)
+		draw_circle(pos + Vector2(-3, -4), 3.0, Color(1, 1, 1, 0.24))
+		draw_circle(pos + Vector2(3, -4), 3.0, Color(1, 1, 1, 0.24))
 
 
 
@@ -2050,12 +2359,12 @@ func draw_opening_bees() -> void:
 	if opening_phase != "walk":
 		return
 	var ground := get_opening_ground_y()
-	for i in range(7):
-		var pos := opening_world_pos(520 + i * 135 + sin(opening_time * 3.0 + i) * 18.0, ground - 150.0 + sin(opening_time * 4.0 + i) * 22.0)
-		draw_circle(pos, 8, Color("#ffc247"))
-		draw_rect(Rect2(pos + Vector2(-3, -7), Vector2(3, 14)), Color("#3a1c11"), true)
-		draw_circle(pos + Vector2(-6, -8), 6, Color(1, 1, 1, 0.7))
-		draw_circle(pos + Vector2(6, -8), 6, Color(1, 1, 1, 0.7))
+	for i in range(4):
+		var pos := opening_world_pos(560 + i * 230 + sin(opening_time * 2.4 + i) * 8.0, ground - 174.0 + sin(opening_time * 2.8 + i) * 8.0)
+		draw_circle(pos, 4.0, Color(1.0, 0.76, 0.25, 0.45))
+		draw_rect(Rect2(pos + Vector2(-1, -3), Vector2(2, 6)), Color(0.23, 0.11, 0.07, 0.32), true)
+		draw_circle(pos + Vector2(-3, -4), 3.0, Color(1, 1, 1, 0.24))
+		draw_circle(pos + Vector2(3, -4), 3.0, Color(1, 1, 1, 0.24))
 
 
 func draw_opening_church(pos: Vector2) -> void:
@@ -2087,10 +2396,27 @@ func draw_opening_ui(viewport: Vector2) -> void:
 	if opening_memory_open:
 		draw_opening_memory_card(viewport)
 		return
-	if opening_phase == "photo":
-		draw_camera_icon()
 	if opening_phase in ["photo", "walk", "meet"]:
 		draw_opening_hint(opening_hint, viewport)
+
+
+func draw_opening_camera_collectible() -> void:
+	if opening_camera_collected:
+		return
+	var pos := get_opening_camera_pos() - camera_pos
+	var bob := sin(opening_time * 4.0) * 2.5
+	draw_ellipse_shadow(pos + Vector2(0, 15), Vector2(15, 4), 0.14)
+	if not camera_sprite.is_empty():
+		var region: Rect2 = camera_sprite["region"]
+		var draw_w := 46.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		var target := Rect2(pos + Vector2(-draw_w / 2.0, -draw_h + bob), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(camera_sprite["texture"], target, region)
+	else:
+		draw_rect(Rect2(pos + Vector2(-19, -28 + bob), Vector2(38, 28)), Color("#ffc247"), true)
+		draw_circle(pos + Vector2(0, -14 + bob), 8, Color("#1b150c"))
+	if player_pos.distance_to(get_opening_camera_pos()) < 58.0:
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-9, -52 + bob), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("#ffc247"))
 
 
 func draw_camera_icon() -> void:
@@ -2110,11 +2436,54 @@ func draw_camera_icon() -> void:
 
 
 func draw_opening_hint(text: String, viewport: Vector2) -> void:
-	var width := minf(620.0, viewport.x - 28.0)
-	var rect := Rect2(Vector2((viewport.x - width) / 2.0, viewport.y - 88.0), Vector2(width, 54.0))
-	draw_rect(rect, Color(0.23, 0.11, 0.055, 0.94), true)
+	var font_size := 18
+	var rect := get_opening_hint_rect(viewport, text, font_size)
+	draw_rect(rect, Color(0.62, 0.38, 0.16, 0.58), true)
 	draw_rect(rect, Color("#ffc247"), false, 3.0)
-	draw_string(ThemeDB.fallback_font, rect.position + Vector2(18, 34), text, HORIZONTAL_ALIGNMENT_CENTER, width - 36.0, 18, Color("#fff7dc"))
+	var lines := wrap_hint_text(text, rect.size.x - 36.0, font_size)
+	var line_height := 22.0
+	var total_h := lines.size() * line_height
+	var start_y := rect.position.y + (rect.size.y - total_h) * 0.5 + 17.0
+	for i in range(lines.size()):
+		draw_string(ThemeDB.fallback_font, Vector2(rect.position.x + 18.0, start_y + i * line_height), lines[i], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 36.0, font_size, Color("#fff7dc"))
+
+
+func get_opening_hint_rect(viewport: Vector2, text: String, font_size: int) -> Rect2:
+	var width := minf(620.0, viewport.x - 28.0)
+	var x := (viewport.x - width) / 2.0
+	if touch_ui and touch_ui.visible:
+		var left := 304.0
+		var right := viewport.x - 228.0
+		if right - left >= 260.0:
+			width = right - left
+			x = left
+	var lines := wrap_hint_text(text, width - 36.0, font_size)
+	var height := 54.0 if lines.size() <= 1 else 74.0
+	var y := viewport.y - height - 34.0
+	return Rect2(Vector2(x, y), Vector2(width, height))
+
+
+func wrap_hint_text(text: String, max_width: float, font_size: int) -> Array[String]:
+	var words := text.split(" ")
+	var lines: Array[String] = []
+	var line := ""
+	for word in words:
+		var test := word if line.is_empty() else "%s %s" % [line, word]
+		if not line.is_empty() and ThemeDB.fallback_font.get_string_size(test, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > max_width:
+			lines.append(line)
+			line = word
+		else:
+			line = test
+	if not line.is_empty():
+		lines.append(line)
+	if lines.size() <= 2:
+		return lines
+	var collapsed: Array[String] = [lines[0]]
+	var rest := ""
+	for i in range(1, lines.size()):
+		rest = lines[i] if rest.is_empty() else "%s %s" % [rest, lines[i]]
+	collapsed.append(rest)
+	return collapsed
 
 
 func draw_opening_memory_card(viewport: Vector2) -> void:
@@ -2622,9 +2991,27 @@ func draw_museum_picos(pos: Vector2) -> void:
 
 func draw_missions() -> void:
 	for mission in missions:
+		if mission.has("requires") and not learned.has(mission["requires"]):
+			continue
+		if String(mission.get("type", "")) == "diary_page" and learned.has(mission["id"]):
+			continue
 		var center := Vector2(mission["tile"]) * TILE - camera_pos
 		draw_circle(center + Vector2(0, -34), 10 + sin(Time.get_ticks_msec() / 180.0) * 2.0, Color("#ffc247") if learned.has(mission["id"]) else Color("#fff7dc"))
-		draw_npc(center, mission["id"])
+		if String(mission.get("type", "")) == "diary_page":
+			draw_diary_page(center)
+		else:
+			draw_npc(center, mission["id"])
+
+
+func draw_diary_page(pos: Vector2) -> void:
+	var bob := sin(Time.get_ticks_msec() / 240.0) * 3.0
+	var paper := Rect2(pos + Vector2(-13, -42 + bob), Vector2(26, 34))
+	draw_ellipse_shadow(pos + Vector2(0, -3), Vector2(13, 3), 0.13)
+	draw_rect(paper, Color("#f5e6b8"), true)
+	draw_rect(paper, Color("#8b6234"), false, 2.0)
+	draw_line(paper.position + Vector2(6, 10), paper.position + Vector2(20, 10), Color("#b88945"), 2.0)
+	draw_line(paper.position + Vector2(6, 17), paper.position + Vector2(18, 17), Color("#b88945"), 2.0)
+	draw_line(paper.position + Vector2(6, 24), paper.position + Vector2(21, 24), Color("#b88945"), 2.0)
 
 
 func draw_npc(pos: Vector2, id: String) -> void:
