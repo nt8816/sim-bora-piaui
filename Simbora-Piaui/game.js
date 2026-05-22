@@ -37,6 +37,7 @@ const OPENING_MISSION_ID = "boas_vindas_picos";
 const images = {
   hero: loadImage(`${ASSET_PATH}personagem_animacoes.jpeg`),
   logo: loadImage(`${ASSET_PATH}LOGO SIMBORA.png`),
+  museumPicos: loadImage("godot/assets/museu_picos.png"),
   seuZe: loadImage("seu_ze_lendas.png")
 };
 const PLAYER_SPRITE = {
@@ -123,6 +124,7 @@ const missions = [{
 
 const solids = new Set();
 const water = new Set();
+const museumPlaza = new Set();
 const props = [];
 
 buildWorld();
@@ -175,6 +177,8 @@ function buildWorld() {
 }
 
 function addPicosBlock() {
+  addMuseumArea(23, 19);
+
   for (let x = 11; x <= 31; x++) {
     props.push({ type: "pathTile", x, y: 15 });
   }
@@ -194,6 +198,20 @@ function addPicosBlock() {
   ].forEach(([x, y]) => {
     props.push({ type: "bush", x, y });
   });
+}
+
+function addMuseumArea(x, y) {
+  for (let tx = x - 5; tx <= x + 6; tx++) {
+    for (let ty = y - 2; ty <= y + 7; ty++) {
+      museumPlaza.add(tileKey(tx, ty));
+    }
+  }
+  props.push({ type: "museumPicos", x, y });
+  for (let tx = x - 3; tx <= x + 5; tx++) {
+    for (let ty = y - 2; ty <= y + 2; ty++) {
+      addSolid(tx, ty);
+    }
+  }
 }
 
 function addHouse(x, y) {
@@ -1197,6 +1215,8 @@ function drawGround() {
       const py = y * TILE;
       if (water.has(tileKey(x, y))) {
         drawTile(px, py, "#2a8fc1", "#1e6e9d");
+      } else if (museumPlaza.has(tileKey(x, y))) {
+        drawMuseumPlazaTile(px, py, x, y);
       } else {
         const dry = y > 20 || x > 26;
         drawTile(px, py, dry ? "#b9a05c" : "#71ad5a", dry ? "#8f7d42" : "#4d873f");
@@ -1250,7 +1270,88 @@ function drawProps() {
       if (prop.type === "rock") drawRock(x, y);
       if (prop.type === "house") drawHouse(x, y);
       if (prop.type === "pathTile") drawCityPathTile(x, y);
+      if (prop.type === "museumPicos") drawMuseumPicos(x, y);
     });
+}
+
+function drawMuseumPlazaTile(x, y, tileX, tileY) {
+  drawTile(x, y, "#d7c8a5", "#8a7654");
+  ctx.strokeStyle = "rgba(92,78,58,.38)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y + TILE / 2);
+  ctx.lineTo(x + TILE, y + TILE / 2);
+  ctx.moveTo(x + TILE / 2, y);
+  ctx.lineTo(x + TILE / 2, y + TILE);
+  ctx.stroke();
+  if ((tileX + tileY) % 3 === 0) {
+    ctx.fillStyle = "rgba(255,255,255,.18)";
+    ctx.fillRect(x + 7, y + 7, 6, 6);
+  }
+  if ((tileX * 2 + tileY) % 5 === 0) {
+    ctx.fillStyle = "rgba(80,70,48,.26)";
+    ctx.fillRect(x + 30, y + 31, 8, 3);
+  }
+}
+
+function drawMuseumPicos(x, y) {
+  drawMuseumGarden(x - 218, y + 212, 108, 34);
+  drawMuseumGarden(x + 266, y + 212, 108, 34);
+  drawMuseumGarden(x - 214, y - 64, 92, 36);
+  drawMuseumGarden(x + 248, y - 64, 92, 36);
+
+  ctx.fillStyle = "#b48a55";
+  ctx.fillRect(x - 48, y + 142, TILE * 4, TILE * 5);
+  ctx.strokeStyle = "#6f5132";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x - 48, y + 142, TILE * 4, TILE * 5);
+  ctx.strokeStyle = "rgba(70,44,24,.28)";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(x - 48, y + 142 + i * TILE);
+    ctx.lineTo(x - 48 + TILE * 4, y + 142 + i * TILE);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(0,0,0,.16)";
+  ctx.beginPath();
+  ctx.ellipse(x + 72, y + 172, 148, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (images.museumPicos.complete && images.museumPicos.naturalWidth) {
+    const drawW = 410;
+    const drawH = drawW * (images.museumPicos.naturalHeight / images.museumPicos.naturalWidth);
+    ctx.drawImage(images.museumPicos, x - 132, y - 126, drawW, drawH);
+    return;
+  }
+
+  ctx.fillStyle = "#d6c6a7";
+  ctx.fillRect(x - 110, y - 72, 360, 210);
+  ctx.fillStyle = "#7d5034";
+  ctx.fillRect(x - 124, y - 92, 388, 38);
+  ctx.fillStyle = "#2d3c52";
+  ctx.fillRect(x + 34, y + 52, 42, 86);
+  ctx.fillStyle = "#6f8aa0";
+  for (let col = 0; col < 4; col++) {
+    ctx.fillRect(x - 72 + col * 78, y - 22, 34, 42);
+  }
+}
+
+function drawMuseumGarden(x, y, w, h) {
+  ctx.fillStyle = "#715137";
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = "#4f873c";
+  ctx.fillRect(x + 5, y + 5, w - 10, h - 10);
+  ctx.strokeStyle = "#e0c17b";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = "#f5d35c";
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(x + 22 + i * 28, y + h / 2, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 function drawCityPathTile(x, y) {
