@@ -27,7 +27,7 @@ const moveButtons = document.querySelectorAll(".moveButton");
 const actionButton = document.getElementById("actionButton");
 
 const TILE = 48;
-const WORLD_W = 42;
+const WORLD_W = 58;
 const WORLD_H = 30;
 const VIEW_W = 960;
 const VIEW_H = 540;
@@ -177,8 +177,6 @@ function buildWorld() {
 }
 
 function addPicosBlock() {
-  addMuseumArea(23, 19);
-
   for (let x = 11; x <= 31; x++) {
     props.push({ type: "pathTile", x, y: 15 });
   }
@@ -198,12 +196,27 @@ function addPicosBlock() {
   ].forEach(([x, y]) => {
     props.push({ type: "bush", x, y });
   });
+
+  addMuseumArea(29, 13);
 }
 
 function addMuseumArea(x, y) {
-  for (let tx = x - 5; tx <= x + 6; tx++) {
-    for (let ty = y - 2; ty <= y + 7; ty++) {
+  const area = { left: 21, right: 55, top: 7, bottom: 24 };
+  for (let tx = area.left; tx <= area.right; tx++) {
+    for (let ty = area.top; ty <= area.bottom; ty++) {
       museumPlaza.add(tileKey(tx, ty));
+      solids.delete(tileKey(tx, ty));
+    }
+  }
+  for (let tx = 21; tx <= 24; tx++) {
+    for (let ty = 12; ty <= 18; ty++) {
+      museumPlaza.add(tileKey(tx, ty));
+    }
+  }
+  for (let i = props.length - 1; i >= 0; i--) {
+    const prop = props[i];
+    if (prop.x >= area.left && prop.x <= area.right && prop.y >= area.top && prop.y <= area.bottom) {
+      props.splice(i, 1);
     }
   }
   props.push({ type: "museumPicos", x, y });

@@ -1,7 +1,7 @@
 extends Node2D
 
 const TILE := 48
-const WORLD_W := 42
+const WORLD_W := 58
 const WORLD_H := 30
 const PLAYER_SPEED := 150.0
 const CHARACTER_SHEETS: Dictionary = {
@@ -771,8 +771,8 @@ func draw_asphalt_texture_path(points: Array[Vector2]) -> void:
 
 
 func draw_church_plaza() -> void:
-	for x in range(24, 31):
-		for y in range(17, 21):
+	for x in range(24, WORLD_W - 1):
+		for y in range(9, 21):
 			var rect := world_rect(Vector2i(x, y))
 			draw_rect(rect, Color("#cfc4a6"))
 			draw_rect(rect.grow(-0.5), Color("#968c73"), false, 1.0)

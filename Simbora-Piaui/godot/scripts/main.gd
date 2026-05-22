@@ -1,7 +1,7 @@
 extends Node2D
 
 const TILE := 48
-const WORLD_W := 66
+const WORLD_W := 82
 const WORLD_TOP_TILE := -8
 const WORLD_H := 30
 const PLAYER_SPEED := 150.0
@@ -228,7 +228,7 @@ var ozildo_plaza_tile := Vector2i(26, 18)
 var ozildo_plaza_size := Vector2i(12, 8)
 var picos_church_tile := Vector2i(33, 9)
 var picos_church_plaza_tile := Vector2i(17, 5)
-var picos_church_plaza_size := Vector2i(34, 22)
+var picos_church_plaza_size := Vector2i(64, 22)
 var picos_church_plaza_art_tile := Vector2i(18, 12)
 var picos_church_plaza_art_size := Vector2i(30, 12)
 
