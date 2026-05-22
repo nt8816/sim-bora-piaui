@@ -44,6 +44,9 @@ var church_picos_texture: Texture2D = preload("res://assets/igreja_picos.png")
 var picos_sign_texture: Texture2D = preload("res://assets/placa_picos.png")
 var asphalt_texture: Texture2D = preload("res://assets/asfalto.png")
 var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
+var market_stall_source_texture: Texture2D
+var market_stall_texture: Texture2D
+var feira_adaptada_texture: Texture2D = preload("res://assets/feira_adaptada.png")
 var seu_ze_texture: Texture2D = preload("res://assets/seu_ze_lendas.png")
 var seu_ze_idle_texture: Texture2D = preload("res://assets/seu_ze_idle_clean.png")
 var seu_ze_fan_texture: Texture2D
@@ -76,6 +79,8 @@ var church_picos_sprite := {}
 var asphalt_curve_sprite := {}
 var camera_sprite := {}
 var seu_ze_sprite := {}
+var market_stall_sprites := []
+var feira_adaptada_sprite := {}
 var water_sprites := []
 var hero_walk_frames := {
 	"right": [],
@@ -459,6 +464,7 @@ func load_tree_sprites() -> void:
 
 
 func load_special_sprites() -> void:
+	feira_adaptada_sprite = make_light_background_sprite(feira_adaptada_texture)
 	cactus_sprite = make_clean_sprite(cactus_texture, true)
 	museum_picos_sprite = make_clean_sprite(museum_picos_texture, true)
 	church_picos_sprite = make_clean_sprite(church_picos_texture, true)
@@ -537,6 +543,189 @@ func build_hero_frame_textures(source: Image, frames: Array) -> Array:
 		normalized.blit_rect(frame, Rect2i(Vector2i.ZERO, fitted_size), paste_pos)
 		textures.append(ImageTexture.create_from_image(normalized))
 	return textures
+
+
+
+func load_market_stall_sprites() -> void:
+	market_stall_sprites.clear()
+	if market_stall_source_texture == null:
+		return
+	var image := market_stall_source_texture.get_image()
+	if image == null:
+		return
+	image.convert(Image.FORMAT_RGBA8)
+	erase_flooded_dark_background(image)
+
+	var regions := [
+		{"rect": Rect2(14, 76, 136, 104), "width": 164.0},
+		{"rect": Rect2(174, 78, 134, 102), "width": 164.0},
+		{"rect": Rect2(15, 190, 136, 105), "width": 164.0},
+		{"rect": Rect2(174, 190, 134, 105), "width": 164.0},
+		{"rect": Rect2(14, 303, 138, 101), "width": 164.0},
+		{"rect": Rect2(174, 303, 136, 102), "width": 164.0},
+		{"rect": Rect2(14, 417, 139, 104), "width": 164.0},
+		{"rect": Rect2(174, 418, 136, 103), "width": 164.0},
+		{"rect": Rect2(359, 78, 137, 102), "width": 164.0},
+		{"rect": Rect2(517, 79, 134, 102), "width": 164.0},
+		{"rect": Rect2(704, 78, 136, 102), "width": 164.0},
+		{"rect": Rect2(865, 78, 135, 102), "width": 164.0},
+		{"rect": Rect2(1044, 78, 136, 101), "width": 164.0},
+		{"rect": Rect2(1205, 78, 136, 101), "width": 164.0},
+		{"rect": Rect2(14, 651, 138, 105), "width": 164.0},
+		{"rect": Rect2(174, 651, 137, 105), "width": 164.0},
+		{"rect": Rect2(359, 651, 138, 105), "width": 164.0},
+		{"rect": Rect2(518, 651, 137, 105), "width": 164.0},
+		{"rect": Rect2(704, 682, 292, 120), "width": 324.0},
+		{"rect": Rect2(704, 826, 292, 116), "width": 324.0},
+		{"rect": Rect2(704, 968, 292, 116), "width": 324.0},
+		{"rect": Rect2(1047, 650, 138, 106), "width": 164.0},
+		{"rect": Rect2(1206, 650, 137, 106), "width": 164.0},
+		{"rect": Rect2(1045, 973, 139, 104), "width": 164.0},
+		{"rect": Rect2(1206, 973, 137, 104), "width": 164.0}
+	]
+	for data in regions:
+		erase_region_dark_background(image, data["rect"])
+		market_stall_sprites.append(data)
+	market_stall_texture = ImageTexture.create_from_image(image)
+
+
+func erase_region_dark_background(image: Image, region: Rect2) -> void:
+	var min_x := maxi(0, int(region.position.x))
+	var min_y := maxi(0, int(region.position.y))
+	var max_x := mini(image.get_width() - 1, int(region.position.x + region.size.x) - 1)
+	var max_y := mini(image.get_height() - 1, int(region.position.y + region.size.y) - 1)
+	var visited := {}
+	var queue: Array[Vector2i] = []
+	for x in range(min_x, max_x + 1):
+		queue.append(Vector2i(x, min_y))
+		queue.append(Vector2i(x, max_y))
+	for y in range(min_y, max_y + 1):
+		queue.append(Vector2i(min_x, y))
+		queue.append(Vector2i(max_x, y))
+
+	while not queue.is_empty():
+		var p: Vector2i = queue.pop_back()
+		if p.x < min_x or p.y < min_y or p.x > max_x or p.y > max_y:
+			continue
+		var key := tile_key(p.x, p.y)
+		if visited.has(key):
+			continue
+		visited[key] = true
+		var color := image.get_pixel(p.x, p.y)
+		if color.a < 0.02:
+			continue
+		if color.r > 0.085 or color.g > 0.085 or color.b > 0.085:
+			continue
+		color.a = 0.0
+		image.set_pixel(p.x, p.y, color)
+		queue.append(p + Vector2i(1, 0))
+		queue.append(p + Vector2i(-1, 0))
+		queue.append(p + Vector2i(0, 1))
+		queue.append(p + Vector2i(0, -1))
+
+
+func erase_flooded_dark_background(image: Image) -> void:
+	var w := image.get_width()
+	var h := image.get_height()
+	var visited := {}
+	var queue: Array[Vector2i] = []
+	for x in range(w):
+		queue.append(Vector2i(x, 0))
+		queue.append(Vector2i(x, h - 1))
+	for y in range(h):
+		queue.append(Vector2i(0, y))
+		queue.append(Vector2i(w - 1, y))
+
+	while not queue.is_empty():
+		var p: Vector2i = queue.pop_back()
+		if p.x < 0 or p.y < 0 or p.x >= w or p.y >= h:
+			continue
+		var key := tile_key(p.x, p.y)
+		if visited.has(key):
+			continue
+		visited[key] = true
+		var color := image.get_pixel(p.x, p.y)
+		if color.r > 0.085 or color.g > 0.085 or color.b > 0.085:
+			continue
+		color.a = 0.0
+		image.set_pixel(p.x, p.y, color)
+		queue.append(p + Vector2i(1, 0))
+		queue.append(p + Vector2i(-1, 0))
+		queue.append(p + Vector2i(0, 1))
+		queue.append(p + Vector2i(0, -1))
+
+
+
+func make_light_background_sprite(texture: Texture2D) -> Dictionary:
+	var image := texture.get_image()
+	if image == null:
+		return {}
+	image.convert(Image.FORMAT_RGBA8)
+	erase_flooded_light_background(image)
+	return crop_visible_image(image)
+
+
+func erase_flooded_light_background(image: Image) -> void:
+	var w := image.get_width()
+	var h := image.get_height()
+	var visited := {}
+	var queue: Array[Vector2i] = []
+	for x in range(w):
+		queue.append(Vector2i(x, 0))
+		queue.append(Vector2i(x, h - 1))
+	for y in range(h):
+		queue.append(Vector2i(0, y))
+		queue.append(Vector2i(w - 1, y))
+
+	while not queue.is_empty():
+		var p: Vector2i = queue.pop_back()
+		if p.x < 0 or p.y < 0 or p.x >= w or p.y >= h:
+			continue
+		var key := tile_key(p.x, p.y)
+		if visited.has(key):
+			continue
+		visited[key] = true
+		var color := image.get_pixel(p.x, p.y)
+		var gray_delta := maxf(color.r, maxf(color.g, color.b)) - minf(color.r, minf(color.g, color.b))
+		var is_light_background := color.r > 0.88 and color.g > 0.88 and color.b > 0.88 and gray_delta < 0.08
+		if not is_light_background:
+			continue
+		color.a = 0.0
+		image.set_pixel(p.x, p.y, color)
+		queue.append(p + Vector2i(1, 0))
+		queue.append(p + Vector2i(-1, 0))
+		queue.append(p + Vector2i(0, 1))
+		queue.append(p + Vector2i(0, -1))
+
+
+func crop_visible_image(image: Image) -> Dictionary:
+	var min_x := image.get_width()
+	var min_y := image.get_height()
+	var max_x := 0
+	var max_y := 0
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			if image.get_pixel(x, y).a > 0.03:
+				min_x = mini(min_x, x)
+				min_y = mini(min_y, y)
+				max_x = maxi(max_x, x)
+				max_y = maxi(max_y, y)
+
+	if max_x < min_x or max_y < min_y:
+		return {
+			"texture": ImageTexture.create_from_image(image),
+			"region": Rect2(Vector2.ZERO, Vector2(image.get_width(), image.get_height()))
+		}
+
+	var pad := 4
+	var sx := maxi(0, min_x - pad)
+	var sy := maxi(0, min_y - pad)
+	var sw := mini(image.get_width() - sx, max_x - min_x + pad * 2)
+	var sh := mini(image.get_height() - sy, max_y - min_y + pad * 2)
+	return {
+		"texture": ImageTexture.create_from_image(image),
+		"region": Rect2(Vector2(sx, sy), Vector2(sw, sh))
+	}
 
 
 func make_clean_sprite(texture: Texture2D, erase_white_background: bool) -> Dictionary:
@@ -636,11 +825,12 @@ func add_picos_district(sx: int, sy: int) -> void:
 	var picos_sign_tile := Vector2i(sx - 31, sy + 8)
 	props.append({"type": "picos_sign", "tile": picos_sign_tile})
 	add_picos_sign_collision(picos_sign_tile)
-	add_picos_market(sx - 11, sy + 6)
 	add_picos_church(picos_church_tile.x, picos_church_tile.y)
 	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
+	clear_feira_walk_area(sx + 10, sy - 10, 16, 30)
+	add_feira_adaptada(sx + 14, sy - 6)
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
 
 
@@ -658,6 +848,15 @@ func clear_church_plaza_props() -> void:
 		var keep_landmark: bool = prop.get("type", "") == "church_picos" or prop.get("type", "") == "picos_sign"
 		return keep_landmark or not inside_plaza
 	)
+
+
+func clear_feira_walk_area(sx: int, sy: int, w: int, h: int) -> void:
+	for x in range(sx, sx + w):
+		for y in range(sy, sy + h):
+			solids.erase(tile_key(x, y))
+
+	var area := Rect2(Vector2(sx, sy) * TILE, Vector2(w, h) * TILE)
+	solid_rects = solid_rects.filter(func(rect): return not rect.intersects(area))
 
 
 func add_city_solid(tile: Vector2i) -> void:
@@ -694,14 +893,39 @@ func add_church_collision(sx: int, sy: int) -> void:
 	return
 
 
+
+func add_feira_adaptada(sx: int, sy: int) -> void:
+	var tile := Vector2i(sx, sy)
+	props.append({"type": "feira_adaptada", "tile": tile})
+
+
 func add_picos_market(sx: int, sy: int) -> void:
-	for row in range(2):
-		for col in range(4):
-			var tile := Vector2i(sx + col * 2, sy + row * 2)
-			props.append({"type": "market_stall", "tile": tile, "variant": (row + col) % 4})
-			add_solid(tile.x, tile.y)
-	for offset in [Vector2i(-1, 0), Vector2i(8, 0), Vector2i(-1, 3), Vector2i(8, 3), Vector2i(3, -1)]:
+	var stalls := [
+		{"offset": Vector2i(-1, -1), "variant": 0},
+		{"offset": Vector2i(3, -1), "variant": 2},
+		{"offset": Vector2i(7, -1), "variant": 14},
+		{"offset": Vector2i(0, 2), "variant": 18},
+		{"offset": Vector2i(7, 2), "variant": 20},
+		{"offset": Vector2i(-1, 5), "variant": 4},
+		{"offset": Vector2i(3, 5), "variant": 15},
+		{"offset": Vector2i(7, 5), "variant": 17}
+	]
+	for data in stalls:
+		var tile: Vector2i = Vector2i(sx, sy) + data["offset"]
+		var variant: int = data["variant"]
+		props.append({"type": "market_stall", "tile": tile, "variant": variant})
+		add_market_stall_collision(tile, variant)
+
+	for offset in [Vector2i(-2, 1), Vector2i(5, 1), Vector2i(11, 1), Vector2i(-2, 4), Vector2i(11, 4), Vector2i(1, 7), Vector2i(6, 7), Vector2i(10, 7)]:
 		props.append({"type": "produce_crate", "tile": Vector2i(sx, sy) + offset, "variant": abs(offset.x + offset.y) % 3})
+
+
+func add_market_stall_collision(tile: Vector2i, variant: int) -> void:
+	var world := Vector2(tile) * TILE
+	var is_large := variant >= 18 and variant <= 20
+	var width := 248.0 if is_large else 124.0
+	var height := 54.0
+	solid_rects.append(Rect2(world + Vector2(TILE / 2.0 - width / 2.0, 4), Vector2(width, height)))
 
 
 func add_phase1_diary_pages() -> void:
@@ -711,7 +935,7 @@ func add_phase1_diary_pages() -> void:
 		"npc": "Diário das Raízes",
 		"item": "Página da Feira Livre",
 		"fact": "A Feira Livre de Picos guarda encontros, trabalho e sabores que ajudam a contar a economia e a vida cotidiana da cidade.",
-		"tile": Vector2i(picos_district_tile.x - 12, picos_district_tile.y + 11),
+		"tile": picos_district_tile + Vector2i(13, 7),
 		"type": "diary_page",
 		"requires": PHASE1_ACCEPTED_ID
 	})
@@ -2813,6 +3037,8 @@ func draw_props() -> void:
 				draw_museum_picos(pos)
 			"church_picos":
 				draw_church_picos(pos)
+			"feira_adaptada":
+				draw_feira_adaptada(pos)
 			"market_stall":
 				draw_market_stall(pos, prop.get("variant", 0))
 			"produce_crate":
@@ -2944,8 +3170,31 @@ func draw_picos_sign(pos: Vector2) -> void:
 	draw_rect(Rect2(pos + Vector2(8, 39), Vector2(92, 4)), Color("#ffd84a"))
 
 
+
+func draw_feira_adaptada(pos: Vector2) -> void:
+	if feira_adaptada_sprite.is_empty():
+		draw_market_stall(pos, 0)
+		return
+	var region: Rect2 = feira_adaptada_sprite["region"]
+	var draw_w := 260.0
+	var draw_h := draw_w * (region.size.y / region.size.x)
+	draw_ellipse_shadow(pos + Vector2(24, 348), Vector2(draw_w * 0.38, 12), 0.16)
+	var target := Rect2(pos + Vector2(TILE / 2.0 - draw_w / 2.0, -12), Vector2(draw_w, draw_h))
+	draw_texture_rect_region(feira_adaptada_sprite["texture"], target, region)
+
+
 func draw_market_stall(pos: Vector2, variant: int) -> void:
-	var canvas: Color = [Color("#d8423a"), Color("#f2c84b"), Color("#3b8cc8"), Color("#3aa65b")][variant % 4]
+	if market_stall_texture and not market_stall_sprites.is_empty():
+		var data: Dictionary = market_stall_sprites[variant % market_stall_sprites.size()]
+		var region: Rect2 = data["rect"]
+		var draw_w: float = data["width"]
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		draw_ellipse_shadow(pos + Vector2(TILE / 2.0, TILE + 4), Vector2(draw_w * 0.34, 8), 0.16)
+		var target := Rect2(pos + Vector2(TILE / 2.0 - draw_w / 2.0, TILE + 7 - draw_h), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(market_stall_texture, target, region)
+		return
+
+	var canvas: Color = [Color("#f7f1df"), Color("#202225"), Color("#1f6ed4"), Color("#f7f1df")][variant % 4]
 	draw_ellipse_shadow(pos + Vector2(24, 43), Vector2(28, 6))
 	draw_rect(Rect2(pos + Vector2(6, 24), Vector2(36, 18)), Color("#8b5a36"))
 	draw_rect(Rect2(pos + Vector2(3, 14), Vector2(42, 12)), canvas)
