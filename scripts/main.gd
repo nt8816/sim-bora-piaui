@@ -2115,10 +2115,9 @@ func _draw() -> void:
 	draw_church_plaza()
 	draw_ozildo_plaza()
 	draw_paths()
-	draw_props()
+	draw_props_with_player()
 	draw_missions()
 	draw_opening_seu_ze_on_map()
-	draw_player()
 	if opening_active:
 		draw_opening_map_guides()
 	draw_vignette()
@@ -2819,41 +2818,74 @@ func draw_center_lane_dash(center: Vector2, tangent: Vector2, length: float) -> 
 
 func draw_props() -> void:
 	var sorted_props := props.duplicate()
-	sorted_props.sort_custom(func(a, b): return a["tile"].y < b["tile"].y)
+	sorted_props.sort_custom(func(a, b): return get_prop_depth_y(a) < get_prop_depth_y(b))
 	for prop in sorted_props:
-		var pos := Vector2(prop["tile"]) * TILE - camera_pos
-		match prop["type"]:
-			"palm":
-				draw_palm(pos)
-			"cactus":
-				draw_cactus(pos)
-			"bush":
+		draw_prop(prop)
+
+
+func draw_props_with_player() -> void:
+	var sorted_props := props.duplicate()
+	sorted_props.sort_custom(func(a, b): return get_prop_depth_y(a) < get_prop_depth_y(b))
+	var player_drawn := false
+	var player_depth := player_pos.y / TILE
+	for prop in sorted_props:
+		if not player_drawn and player_depth < get_prop_depth_y(prop):
+			draw_player()
+			player_drawn = true
+		draw_prop(prop)
+	if not player_drawn:
+		draw_player()
+
+
+func get_prop_depth_y(prop: Dictionary) -> float:
+	var tile: Vector2i = prop["tile"]
+	match prop["type"]:
+		"market_stall":
+			return tile.y + 1.1
+		"produce_crate":
+			return tile.y + 0.8
+		"museum_picos":
+			return tile.y + 4.0
+		"church_picos":
+			return tile.y + 6.0
+		_:
+			return tile.y
+
+
+func draw_prop(prop: Dictionary) -> void:
+	var pos := Vector2(prop["tile"]) * TILE - camera_pos
+	match prop["type"]:
+		"palm":
+			draw_palm(pos)
+		"cactus":
+			draw_cactus(pos)
+		"bush":
+			draw_bush(pos)
+		"rock":
+			draw_rock(pos)
+		"house":
+			draw_house(pos)
+		"city_building":
+			draw_city_building(pos, prop.get("variant", 0))
+		"street_lamp":
+			draw_street_lamp(pos)
+		"city_bench":
+			draw_city_bench(pos)
+		"picos_sign":
+			draw_picos_sign(pos)
+		"museum_picos":
+			draw_museum_picos(pos)
+		"church_picos":
+			draw_church_picos(pos)
+		"market_stall":
+			draw_market_stall(pos, prop.get("variant", 0))
+		"produce_crate":
+			draw_produce_crate(pos, prop.get("variant", 0))
+		_:
+			if tree_sprites.has(prop["type"]):
+				draw_tree_sprite(pos, prop["type"])
+			else:
 				draw_bush(pos)
-			"rock":
-				draw_rock(pos)
-			"house":
-				draw_house(pos)
-			"city_building":
-				draw_city_building(pos, prop.get("variant", 0))
-			"street_lamp":
-				draw_street_lamp(pos)
-			"city_bench":
-				draw_city_bench(pos)
-			"picos_sign":
-				draw_picos_sign(pos)
-			"museum_picos":
-				draw_museum_picos(pos)
-			"church_picos":
-				draw_church_picos(pos)
-			"market_stall":
-				draw_market_stall(pos, prop.get("variant", 0))
-			"produce_crate":
-				draw_produce_crate(pos, prop.get("variant", 0))
-			_:
-				if tree_sprites.has(prop["type"]):
-					draw_tree_sprite(pos, prop["type"])
-				else:
-					draw_bush(pos)
 
 
 func draw_tree_sprite(pos: Vector2, type: String) -> void:

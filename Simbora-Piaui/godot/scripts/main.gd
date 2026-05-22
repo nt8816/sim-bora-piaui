@@ -669,6 +669,7 @@ func make_light_background_sprite(texture: Texture2D) -> Dictionary:
 		return {}
 	image.convert(Image.FORMAT_RGBA8)
 	erase_flooded_light_background(image)
+	erase_large_lower_light_regions(image)
 	return crop_visible_image(image)
 
 
@@ -703,6 +704,53 @@ func erase_flooded_light_background(image: Image) -> void:
 		queue.append(p + Vector2i(-1, 0))
 		queue.append(p + Vector2i(0, 1))
 		queue.append(p + Vector2i(0, -1))
+
+
+func erase_large_lower_light_regions(image: Image) -> void:
+	var w := image.get_width()
+	var h := image.get_height()
+	var start_y := int(h * 0.38)
+	var visited := {}
+	for y in range(start_y, h):
+		for x in range(w):
+			var start := Vector2i(x, y)
+			var start_key := tile_key(start.x, start.y)
+			if visited.has(start_key):
+				continue
+			visited[start_key] = true
+			if not is_removable_light_pixel(image.get_pixel(x, y)):
+				continue
+
+			var component: Array[Vector2i] = []
+			var queue: Array[Vector2i] = [start]
+			while not queue.is_empty():
+				var p: Vector2i = queue.pop_back()
+				if p.x < 0 or p.y < start_y or p.x >= w or p.y >= h:
+					continue
+				if not is_removable_light_pixel(image.get_pixel(p.x, p.y)):
+					continue
+				component.append(p)
+				for next in [p + Vector2i(1, 0), p + Vector2i(-1, 0), p + Vector2i(0, 1), p + Vector2i(0, -1)]:
+					if next.x < 0 or next.y < start_y or next.x >= w or next.y >= h:
+						continue
+					var key := tile_key(next.x, next.y)
+					if visited.has(key):
+						continue
+					visited[key] = true
+					queue.append(next)
+
+			if component.size() >= 900:
+				for p in component:
+					var color := image.get_pixel(p.x, p.y)
+					color.a = 0.0
+					image.set_pixel(p.x, p.y, color)
+
+
+func is_removable_light_pixel(color: Color) -> bool:
+	if color.a < 0.03:
+		return false
+	var gray_delta := maxf(color.r, maxf(color.g, color.b)) - minf(color.r, minf(color.g, color.b))
+	return color.r > 0.86 and color.g > 0.86 and color.b > 0.86 and gray_delta < 0.10
 
 
 func crop_visible_image(image: Image) -> Dictionary:
@@ -918,11 +966,9 @@ func add_feira_horizontal(sx: int, sy: int) -> void:
 func add_feira_horizontal_collision(tile: Vector2i, variant: String) -> void:
 	var world := Vector2(tile) * TILE
 	if variant == "roupas":
-		solid_rects.append(Rect2(world + Vector2(0, 18), Vector2(900, 94)))
-		solid_rects.append(Rect2(world + Vector2(0, 112), Vector2(900, 96)))
+		solid_rects.append(Rect2(world + Vector2(0, 28), Vector2(900, 272)))
 	else:
-		solid_rects.append(Rect2(world + Vector2(0, 18), Vector2(805, 92)))
-		solid_rects.append(Rect2(world + Vector2(0, 110), Vector2(805, 92)))
+		solid_rects.append(Rect2(world + Vector2(0, 28), Vector2(805, 228)))
 
 
 func add_feira_adaptada(sx: int, sy: int) -> void:
@@ -2368,10 +2414,9 @@ func _draw() -> void:
 	draw_church_plaza()
 	draw_ozildo_plaza()
 	draw_paths()
-	draw_props()
+	draw_props_with_player()
 	draw_missions()
 	draw_opening_seu_ze_on_map()
-	draw_player()
 	if opening_active:
 		draw_opening_map_guides()
 	draw_vignette()
@@ -3072,47 +3117,82 @@ func draw_center_lane_dash(center: Vector2, tangent: Vector2, length: float) -> 
 
 func draw_props() -> void:
 	var sorted_props := props.duplicate()
-	sorted_props.sort_custom(func(a, b): return a["tile"].y < b["tile"].y)
+	sorted_props.sort_custom(func(a, b): return get_prop_depth_y(a) < get_prop_depth_y(b))
 	for prop in sorted_props:
-		var pos := Vector2(prop["tile"]) * TILE - camera_pos
-		match prop["type"]:
-			"palm":
-				draw_palm(pos)
-			"cactus":
-				draw_cactus(pos)
-			"bush":
+		draw_prop(prop)
+
+
+func draw_props_with_player() -> void:
+	var sorted_props := props.duplicate()
+	sorted_props.sort_custom(func(a, b): return get_prop_depth_y(a) < get_prop_depth_y(b))
+	var player_drawn := false
+	var player_depth := player_pos.y / TILE
+	for prop in sorted_props:
+		if not player_drawn and player_depth < get_prop_depth_y(prop):
+			draw_player()
+			player_drawn = true
+		draw_prop(prop)
+	if not player_drawn:
+		draw_player()
+
+
+func get_prop_depth_y(prop: Dictionary) -> float:
+	var tile: Vector2i = prop["tile"]
+	match prop["type"]:
+		"feira_roupas_horizontal":
+			return tile.y + 7.0
+		"feira_bancas_horizontal":
+			return tile.y + 7.0
+		"feira_adaptada":
+			return tile.y + 8.0
+		"museum_picos":
+			return tile.y + 4.0
+		"church_picos":
+			return tile.y + 6.0
+		_:
+			return tile.y
+
+
+func draw_prop(prop: Dictionary) -> void:
+	var pos := Vector2(prop["tile"]) * TILE - camera_pos
+	match prop["type"]:
+		"palm":
+			draw_palm(pos)
+		"cactus":
+			draw_cactus(pos)
+		"bush":
+			draw_bush(pos)
+		"rock":
+			draw_rock(pos)
+		"house":
+			draw_house(pos)
+		"city_building":
+			draw_city_building(pos, prop.get("variant", 0))
+		"street_lamp":
+			draw_street_lamp(pos)
+		"city_bench":
+			draw_city_bench(pos)
+		"picos_sign":
+			draw_picos_sign(pos)
+		"museum_picos":
+			draw_museum_picos(pos)
+		"church_picos":
+			draw_church_picos(pos)
+		"feira_adaptada":
+			draw_feira_adaptada(pos)
+		"feira_roupas_horizontal":
+			draw_feira_horizontal(pos, "roupas")
+		"feira_bancas_horizontal":
+			draw_feira_horizontal(pos, "bancas")
+		"market_stall":
+			draw_market_stall(pos, prop.get("variant", 0))
+		"produce_crate":
+			draw_produce_crate(pos, prop.get("variant", 0))
+		_:
+			if tree_sprites.has(prop["type"]):
+				draw_tree_sprite(pos, prop["type"])
+			else:
 				draw_bush(pos)
-			"rock":
-				draw_rock(pos)
-			"house":
-				draw_house(pos)
-			"city_building":
-				draw_city_building(pos, prop.get("variant", 0))
-			"street_lamp":
-				draw_street_lamp(pos)
-			"city_bench":
-				draw_city_bench(pos)
-			"picos_sign":
-				draw_picos_sign(pos)
-			"museum_picos":
-				draw_museum_picos(pos)
-			"church_picos":
-				draw_church_picos(pos)
-			"feira_adaptada":
-				draw_feira_adaptada(pos)
-			"feira_roupas_horizontal":
-				draw_feira_horizontal(pos, "roupas")
-			"feira_bancas_horizontal":
-				draw_feira_horizontal(pos, "bancas")
-			"market_stall":
-				draw_market_stall(pos, prop.get("variant", 0))
-			"produce_crate":
-				draw_produce_crate(pos, prop.get("variant", 0))
-			_:
-				if tree_sprites.has(prop["type"]):
-					draw_tree_sprite(pos, prop["type"])
-				else:
-					draw_bush(pos)
 
 
 func draw_tree_sprite(pos: Vector2, type: String) -> void:
