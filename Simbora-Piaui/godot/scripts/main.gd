@@ -47,6 +47,8 @@ var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
 var market_stall_source_texture: Texture2D
 var market_stall_texture: Texture2D
 var feira_adaptada_texture: Texture2D = preload("res://assets/feira_adaptada.png")
+var feira_roupas_texture: Texture2D = preload("res://assets/feira_roupas_horizontal.png")
+var feira_bancas_texture: Texture2D = preload("res://assets/feira_bancas_horizontal.png")
 var seu_ze_texture: Texture2D = preload("res://assets/seu_ze_lendas.png")
 var seu_ze_idle_texture: Texture2D = preload("res://assets/seu_ze_idle_clean.png")
 var seu_ze_fan_texture: Texture2D
@@ -81,6 +83,8 @@ var camera_sprite := {}
 var seu_ze_sprite := {}
 var market_stall_sprites := []
 var feira_adaptada_sprite := {}
+var feira_roupas_sprite := {}
+var feira_bancas_sprite := {}
 var water_sprites := []
 var hero_walk_frames := {
 	"right": [],
@@ -465,6 +469,8 @@ func load_tree_sprites() -> void:
 
 func load_special_sprites() -> void:
 	feira_adaptada_sprite = make_light_background_sprite(feira_adaptada_texture)
+	feira_roupas_sprite = make_light_background_sprite(feira_roupas_texture)
+	feira_bancas_sprite = make_light_background_sprite(feira_bancas_texture)
 	cactus_sprite = make_clean_sprite(cactus_texture, true)
 	museum_picos_sprite = make_clean_sprite(museum_picos_texture, true)
 	church_picos_sprite = make_clean_sprite(church_picos_texture, true)
@@ -829,8 +835,7 @@ func add_picos_district(sx: int, sy: int) -> void:
 	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
-	clear_feira_walk_area(sx + 10, sy - 10, 16, 30)
-	add_feira_adaptada(sx + 14, sy - 6)
+	add_feira_horizontal(picos_church_plaza_tile.x + 2, picos_church_plaza_tile.y + 1)
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
 
 
@@ -892,6 +897,23 @@ func add_church_collision(sx: int, sy: int) -> void:
 	# The church uses pixel-mask collision in collides_church_sprite().
 	return
 
+
+
+func add_feira_horizontal(sx: int, sy: int) -> void:
+	var roupas_tile := Vector2i(sx, sy)
+	var bancas_tile := Vector2i(sx, sy + 6)
+	props.append({"type": "feira_roupas_horizontal", "tile": roupas_tile})
+	props.append({"type": "feira_bancas_horizontal", "tile": bancas_tile})
+	add_feira_horizontal_collision(roupas_tile, "roupas")
+	add_feira_horizontal_collision(bancas_tile, "bancas")
+
+
+func add_feira_horizontal_collision(tile: Vector2i, variant: String) -> void:
+	var world := Vector2(tile) * TILE
+	if variant == "roupas":
+		solid_rects.append(Rect2(world + Vector2(14, 58), Vector2(696, 146)))
+	else:
+		solid_rects.append(Rect2(world + Vector2(14, 58), Vector2(730, 174)))
 
 
 func add_feira_adaptada(sx: int, sy: int) -> void:
@@ -3039,6 +3061,10 @@ func draw_props() -> void:
 				draw_church_picos(pos)
 			"feira_adaptada":
 				draw_feira_adaptada(pos)
+			"feira_roupas_horizontal":
+				draw_feira_horizontal(pos, "roupas")
+			"feira_bancas_horizontal":
+				draw_feira_horizontal(pos, "bancas")
 			"market_stall":
 				draw_market_stall(pos, prop.get("variant", 0))
 			"produce_crate":
@@ -3169,6 +3195,19 @@ func draw_picos_sign(pos: Vector2) -> void:
 	draw_string(ThemeDB.fallback_font, pos + Vector2(22, 28), "PICOS", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color("#ffd84a"))
 	draw_rect(Rect2(pos + Vector2(8, 39), Vector2(92, 4)), Color("#ffd84a"))
 
+
+
+func draw_feira_horizontal(pos: Vector2, variant: String) -> void:
+	var sprite: Dictionary = feira_roupas_sprite if variant == "roupas" else feira_bancas_sprite
+	if sprite.is_empty():
+		draw_market_stall(pos, 0)
+		return
+	var region: Rect2 = sprite["region"]
+	var draw_w := 720.0 if variant == "roupas" else 760.0
+	var draw_h := draw_w * (region.size.y / region.size.x)
+	draw_ellipse_shadow(pos + Vector2(draw_w * 0.5, draw_h - 6), Vector2(draw_w * 0.38, 11), 0.13)
+	var target := Rect2(pos, Vector2(draw_w, draw_h))
+	draw_texture_rect_region(sprite["texture"], target, region)
 
 
 func draw_feira_adaptada(pos: Vector2) -> void:
