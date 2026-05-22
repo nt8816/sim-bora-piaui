@@ -772,7 +772,7 @@ func draw_asphalt_texture_path(points: Array[Vector2]) -> void:
 
 func draw_church_plaza() -> void:
 	for x in range(24, WORLD_W - 1):
-		for y in range(9, 21):
+		for y in range(0, 21):
 			var rect := world_rect(Vector2i(x, y))
 			draw_rect(rect, Color("#cfc4a6"))
 			draw_rect(rect.grow(-0.5), Color("#968c73"), false, 1.0)

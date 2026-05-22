@@ -217,8 +217,8 @@ var ozildo_museum_tile := Vector2i(31, 20)
 var ozildo_plaza_tile := Vector2i(26, 18)
 var ozildo_plaza_size := Vector2i(12, 8)
 var picos_church_tile := Vector2i(33, 9)
-var picos_church_plaza_tile := Vector2i(17, 5)
-var picos_church_plaza_size := Vector2i(64, 22)
+var picos_church_plaza_tile := Vector2i(17, 0)
+var picos_church_plaza_size := Vector2i(64, 27)
 var picos_church_plaza_art_tile := Vector2i(18, 12)
 var picos_church_plaza_art_size := Vector2i(30, 12)
 
@@ -655,7 +655,7 @@ func clear_church_plaza_props() -> void:
 			return true
 		var tile: Vector2i = prop["tile"]
 		var inside_plaza: bool = tile.x >= picos_church_plaza_tile.x and tile.x < picos_church_plaza_tile.x + picos_church_plaza_size.x and tile.y >= picos_church_plaza_tile.y and tile.y < picos_church_plaza_tile.y + picos_church_plaza_size.y
-		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "picos_sign", "museum_picos"]
+		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "picos_sign", "museum_picos", "market_stall", "produce_crate", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal"]
 		return keep_landmark or not inside_plaza
 	)
 
