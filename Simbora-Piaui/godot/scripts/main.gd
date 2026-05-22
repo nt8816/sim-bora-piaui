@@ -223,9 +223,9 @@ var menu_hitbox_buttons := []
 var menu_highlights := []
 var character_buttons := {}
 var picos_district_tile := Vector2i(40, 15)
-var ozildo_museum_tile := Vector2i(50, 15)
-var ozildo_plaza_tile := Vector2i(38, 18)
-var ozildo_plaza_size := Vector2i(7, 9)
+var ozildo_museum_tile := Vector2i(27, 15)
+var ozildo_plaza_tile := Vector2i(22, 14)
+var ozildo_plaza_size := Vector2i(12, 9)
 var picos_church_tile := Vector2i(33, 9)
 var picos_church_plaza_tile := Vector2i(17, 5)
 var picos_church_plaza_size := Vector2i(34, 22)
@@ -851,7 +851,7 @@ func clear_church_plaza_props() -> void:
 			return true
 		var tile: Vector2i = prop["tile"]
 		var inside_plaza: bool = tile.x >= picos_church_plaza_tile.x and tile.x < picos_church_plaza_tile.x + picos_church_plaza_size.x and tile.y >= picos_church_plaza_tile.y and tile.y < picos_church_plaza_tile.y + picos_church_plaza_size.y
-		var keep_landmark: bool = prop.get("type", "") == "church_picos" or prop.get("type", "") == "picos_sign"
+		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "picos_sign", "museum_picos"]
 		return keep_landmark or not inside_plaza
 	)
 
@@ -885,6 +885,10 @@ func add_picos_sign_collision(tile: Vector2i) -> void:
 
 func add_picos_museum(sx: int, sy: int) -> void:
 	props.append({"type": "museum_picos", "tile": Vector2i(sx, sy)})
+	for x in range(ozildo_plaza_tile.x, ozildo_plaza_tile.x + ozildo_plaza_size.x):
+		for y in range(ozildo_plaza_tile.y, ozildo_plaza_tile.y + ozildo_plaza_size.y):
+			plaza_tiles[tile_key(x, y)] = true
+			road_tiles.erase(tile_key(x, y))
 	for x in range(sx - 4, sx + 6):
 		for y in range(sy - 2, sy + 4):
 			add_solid(x, y)
@@ -2362,6 +2366,7 @@ func wrap_panel(child: Control, size: Vector2) -> PanelContainer:
 func _draw() -> void:
 	draw_ground()
 	draw_church_plaza()
+	draw_ozildo_plaza()
 	draw_paths()
 	draw_props()
 	draw_missions()
@@ -2811,16 +2816,43 @@ func draw_dynamic_dirt_tile(rect: Rect2, x: int, y: int) -> void:
 
 
 func draw_ozildo_plaza() -> void:
+	var area := Rect2(Vector2(ozildo_plaza_tile) * TILE - camera_pos, Vector2(ozildo_plaza_size) * TILE)
+	draw_rect(area.grow(5.0), Color(0.19, 0.16, 0.11, 0.20), true)
+	draw_rect(area, Color("#d7c8a5"), true)
+	for x in range(ozildo_plaza_tile.x, ozildo_plaza_tile.x + ozildo_plaza_size.x):
+		for y in range(ozildo_plaza_tile.y, ozildo_plaza_tile.y + ozildo_plaza_size.y):
+			draw_plaza_tile(world_rect(Vector2i(x, y)), x, y)
+	draw_rect(area.grow(-8.0), Color("#8a7654"), false, 3.0)
+	draw_rect(area.grow(-14.0), Color(1, 1, 1, 0.10), false, 1.0)
+
+	var entry := Rect2(Vector2(ozildo_museum_tile.x - 1, ozildo_museum_tile.y + 3) * TILE - camera_pos, Vector2(4 * TILE, 5 * TILE))
+	draw_rect(entry, Color("#b48a55"), true)
+	for y in range(0, 5):
+		var line_y := entry.position.y + y * TILE + TILE * 0.5
+		draw_line(Vector2(entry.position.x, line_y), Vector2(entry.position.x + entry.size.x, line_y), Color(0.42, 0.27, 0.14, 0.28), 1.0)
+	draw_rect(entry, Color("#6f5132"), false, 2.0)
+
+	for garden in [
+		Rect2(area.position + Vector2(24, 24), Vector2(92, 36)),
+		Rect2(area.position + Vector2(area.size.x - 116, 24), Vector2(92, 36)),
+		Rect2(area.position + Vector2(24, area.size.y - 58), Vector2(116, 34)),
+		Rect2(area.position + Vector2(area.size.x - 140, area.size.y - 58), Vector2(116, 34))
+	]:
+		draw_rect(garden, Color("#715137"), true)
+		draw_rect(garden.grow(-5.0), Color("#4f873c"), true)
+		draw_rect(garden, Color("#e0c17b"), false, 2.0)
+		for i in range(3):
+			draw_circle(garden.position + Vector2(22 + i * 28, garden.size.y * 0.5), 5.0, Color("#f5d35c"))
+
 	if ozildo_plaza_texture == null:
 		return
-	var area := Rect2(Vector2(ozildo_plaza_tile) * TILE - camera_pos, Vector2(ozildo_plaza_size) * TILE)
 	var texture_size := ozildo_plaza_texture.get_size()
 	var draw_h := area.size.x * (texture_size.y / texture_size.x)
 	var draw_size := Vector2(area.size.x, draw_h)
 	if draw_h > area.size.y:
 		draw_size = Vector2(area.size.y * (texture_size.x / texture_size.y), area.size.y)
 	var target := Rect2(area.position + (area.size - draw_size) * 0.5, draw_size)
-	draw_texture_rect(ozildo_plaza_texture, target, false)
+	draw_texture_rect(ozildo_plaza_texture, target, false, Color(1, 1, 1, 0.16))
 
 
 func draw_church_plaza() -> void:
