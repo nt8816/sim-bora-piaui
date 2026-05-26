@@ -213,6 +213,7 @@ var dialog_panel: PanelContainer
 var dialog_title: Label
 var dialog_text: Label
 var answer_box: VBoxContainer
+var answer_scroll: ScrollContainer
 var dialog_full_text := ""
 var dialog_type_time := 0.0
 var dialog_typewriter_done := true
@@ -1716,9 +1717,71 @@ func open_dialog(title: String, text: String) -> void:
 	dialog_typewriter_done = false
 	dialog_text.text = dialog_full_text
 	dialog_text.visible_characters = 0
+	configure_dialog_layout(text)
 	answer_box.visible = false
 	dialog_panel.visible = true
 	update_touch_controls_visibility()
+
+
+func configure_dialog_layout(text: String) -> void:
+	var option_count := 0
+	var longest_option := 0
+	for child in answer_box.get_children():
+		if child is Button:
+			option_count += 1
+			longest_option = maxi(longest_option, String(child.text).length())
+	var text_len := text.length()
+	var top := 0.58
+	var text_height := 96.0
+	var options_height := 60.0
+	var button_font := 13
+	var button_base := 36.0
+	if option_count >= 4 and longest_option > 110:
+		top = 0.08
+		text_height = 74.0
+		options_height = 380.0
+		button_font = 11
+		button_base = 82.0
+	elif option_count >= 4:
+		top = 0.26
+		text_height = 74.0
+		options_height = 255.0
+		button_font = 13
+		button_base = 44.0
+	elif option_count >= 2 and longest_option > 72:
+		top = 0.34
+		text_height = 96.0
+		options_height = 210.0
+		button_font = 12
+		button_base = 66.0
+	elif option_count >= 2:
+		top = 0.44
+		text_height = 100.0
+		options_height = 150.0
+		button_font = 13
+		button_base = 46.0
+	elif text_len > 210:
+		top = 0.32
+		text_height = 190.0
+		options_height = 54.0
+	elif text_len > 110:
+		top = 0.48
+		text_height = 130.0
+		options_height = 50.0
+	dialog_panel.anchor_top = top
+	dialog_text.custom_minimum_size = Vector2(0, text_height)
+	answer_scroll.custom_minimum_size = Vector2(0, options_height)
+	for child in answer_box.get_children():
+		if child is Button:
+			var button := child as Button
+			var extra := 0.0
+			var length := String(button.text).length()
+			if length > 155:
+				extra = 18.0
+			elif length > 95:
+				extra = 10.0
+			button.custom_minimum_size = Vector2(0, button_base + extra)
+			button.add_theme_font_size_override("font_size", button_font)
 
 
 func update_dialog_typewriter(delta: float) -> void:
@@ -2423,14 +2486,14 @@ func build_dialog_ui() -> void:
 	typewriter_font = make_typewriter_font()
 	dialog_panel = PanelContainer.new()
 	dialog_panel.visible = false
-	dialog_panel.anchor_left = 0.5
-	dialog_panel.anchor_top = 1
-	dialog_panel.anchor_right = 0.5
-	dialog_panel.anchor_bottom = 1
-	dialog_panel.offset_left = -470
-	dialog_panel.offset_top = -260
-	dialog_panel.offset_right = 470
-	dialog_panel.offset_bottom = -18
+	dialog_panel.anchor_left = 0.03
+	dialog_panel.anchor_top = 0.24
+	dialog_panel.anchor_right = 0.97
+	dialog_panel.anchor_bottom = 0.98
+	dialog_panel.offset_left = 0
+	dialog_panel.offset_top = 0
+	dialog_panel.offset_right = 0
+	dialog_panel.offset_bottom = 0
 	hud_layer.add_child(dialog_panel)
 
 	var margin := MarginContainer.new()
@@ -2452,16 +2515,23 @@ func build_dialog_ui() -> void:
 	dialog_text = make_label("", 16)
 	dialog_text.add_theme_font_override("font", typewriter_font)
 	dialog_text.add_theme_constant_override("line_spacing", 4)
-	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dialog_text.custom_minimum_size = Vector2(0, 96)
-	dialog_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	dialog_text.custom_minimum_size = Vector2(0, 82)
+	dialog_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dialog_text.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	box.add_child(dialog_text)
 
+	answer_scroll = ScrollContainer.new()
+	answer_scroll.custom_minimum_size = Vector2(0, 250)
+	answer_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	answer_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(answer_scroll)
+
 	answer_box = VBoxContainer.new()
-	answer_box.custom_minimum_size = Vector2(0, 92)
-	answer_box.size_flags_vertical = Control.SIZE_SHRINK_END
-	answer_box.add_theme_constant_override("separation", 6)
-	box.add_child(answer_box)
+	answer_box.custom_minimum_size = Vector2(0, 0)
+	answer_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	answer_box.add_theme_constant_override("separation", 5)
+	answer_scroll.add_child(answer_box)
 
 
 func make_typewriter_font() -> Font:
@@ -2597,8 +2667,16 @@ func make_button(text: String) -> Button:
 	button.focus_mode = Control.FOCUS_NONE
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-	button.custom_minimum_size = Vector2(0, 42)
-	button.add_theme_font_size_override("font_size", 15)
+	var button_height := 34.0
+	if text.length() > 150:
+		button_height = 64.0
+	elif text.length() > 95:
+		button_height = 54.0
+	elif text.length() > 42:
+		button_height = 44.0
+	button.custom_minimum_size = Vector2(0, button_height)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_font_size_override("font_size", 13)
 	return button
 
 
@@ -3434,11 +3512,11 @@ func get_prop_depth_y(prop: Dictionary) -> float:
 	var tile: Vector2i = prop["tile"]
 	match prop["type"]:
 		"feira_roupas_horizontal":
-			return tile.y + 7.0
+			return tile.y + 3.2
 		"feira_bancas_horizontal":
-			return tile.y + 7.0
+			return tile.y + 3.2
 		"feira_adaptada":
-			return tile.y + 8.0
+			return tile.y + 3.4
 		"dona_rita":
 			return tile.y + 2.6
 		"ana_museu":
