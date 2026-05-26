@@ -1,0 +1,17 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1779804602
+export_presets.cfg::TextFile::-1::1779452617::0::1::::<><><>0<>0<><>::
+::res://assets/::1779452617
+asfalto.png::CompressedTexture2D::6658132103415156566::1779452617::1779804603::1::::<><><>0<>0<>4ad0e48de7a92058206b095277a66d14<>res://.godot/imported/asfalto.png-1c668b41ad97033b2eda0718ec637531.ctex::
+background_personagem.jpg::CompressedTexture2D::3747657739253226048::1779452617::1779804603::1::::<><><>0<>0<>069b6f497a45b097e129df263d7d7c5d<>res://.godot/imported/background_personagem.jpg-57c251611120b850e2758066b0fb6dbc.ctex::
+logo_simbora.png::CompressedTexture2D::7659517709083002275::1779452617::1779804603::1::::<><><>0<>0<>e250d27a96b3867f3eaae51522b997e2<>res://.godot/imported/logo_simbora.png-bf02c9ce250654e46d926ff2ac907be8.ctex::
+personagem_animacoes.jpeg::CompressedTexture2D::8690031846290151050::1779452617::1779804603::1::::<><><>0<>0<>e4970a50048e2251d35873796a9860b2<>res://.godot/imported/personagem_animacoes.jpeg-813c59264ca5dce03e40a0fb5ad528f1.ctex::
+personagem_animacoes.png::CompressedTexture2D::9136892108838743360::1779452617::1779804603::1::::<><><>0<>0<>379cd53fbb3d411cca3d6f61debf5792<>res://.godot/imported/personagem_animacoes.png-62976b1231e0159af9c0ac573c7cb9d7.ctex::
+personagem_feminina.png::CompressedTexture2D::5300291606211803090::1779452617::1779804603::1::::<><><>0<>0<>584f1d1dec2b61e1431760d2f5690657<>res://.godot/imported/personagem_feminina.png-6649cbbb21a73cc54d44ad47276d01ab.ctex::
+personagem_masculino.png::CompressedTexture2D::5916578919379219703::1779452617::1779804603::1::::<><><>0<>0<>a44963705ecca5f5abc03e8ead6a3cff<>res://.godot/imported/personagem_masculino.png-cb42290e7bb5762a9ca868e4505f41ed.ctex::
+placa_picos.png::CompressedTexture2D::1696486815349956259::1779452617::1779804603::1::::<><><>0<>0<>c8eea76a38a2321b36930ca1ca253c33<>res://.godot/imported/placa_picos.png-e675819c9286807aa0286c6235bcd7d3.ctex::
+praca_igreja_picos.png::CompressedTexture2D::1344626665784669116::1779452617::1779804603::1::::<><><>0<>0<>68c41dca2484ca7ab45eb19114931970<>res://.godot/imported/praca_igreja_picos.png-8fa82c50663148e1bfff5b2ec67cdbc4.ctex::
+::res://scenes/::1779452617
+Main.tscn::PackedScene::-1::1779452617::0::1::::<><><>0<>0<><>::res://scripts/main.gd
+::res://scripts/::1779452617
+main.gd::GDScript::5562850415774237412::1779460412::0::1::::<>Node2D<><>0<>0<><>::

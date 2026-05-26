@@ -1,7 +1,7 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1779460142
+::res://::1779804526
 export_presets.cfg::TextFile::-1::1779452617::0::1::::<><><>0<>0<><>::
-::res://assets/::1779452617
+::res://assets/::1779463550
 agua_rio_1.jpeg::CompressedTexture2D::7595669084427081805::1779452617::1779452617::1::::<><><>0<>0<>3c950863bf8fc86c95bc03b99118ab2b<>res://.godot/imported/agua_rio_1.jpeg-500ddd5f6ba995d7e302cc4363821408.ctex::
 agua_rio_2.jpeg::CompressedTexture2D::6809196519705672895::1779452617::1779452617::1::::<><><>0<>0<>b27e93f9ed67864687d4fca2512050e2<>res://.godot/imported/agua_rio_2.jpeg-b9d933ec1e3a36a09f7fc61345f94908.ctex::
 aroeira.png::CompressedTexture2D::8919512120909347450::1779452617::1779452617::1::::<><><>0<>0<>fb7844311bdb6c86f0424f9360258a41<>res://.godot/imported/aroeira.png-86c9b77689fdecd92cf3f7c2a199acc8.ctex::
@@ -35,6 +35,7 @@ praca_igreja_picos.png::CompressedTexture2D::6401960269159486932::1779452617::17
 praca_igreja_picos_hd.png::CompressedTexture2D::3649533019742468329::1779452617::1779452617::1::::<><><>0<>0<>c915abd0ab56ad3d63db26a4a03a6564<>res://.godot/imported/praca_igreja_picos_hd.png-0156e4af64da3d8867a17b0b7809e65d.ctex::
 praca_igreja_picos_horizontal.png::CompressedTexture2D::5438607652005968817::1779452617::1779452617::1::::<><><>0<>0<>cebd4764abb168f0155f332ae5134222<>res://.godot/imported/praca_igreja_picos_horizontal.png-7278b8eeeeaf3c782f11dcf3a50530e8.ctex::
 praca_igreja_picos_sem_fundo.png::CompressedTexture2D::6460571928955225238::1779452617::1779452617::1::::<><><>0<>0<>66c8758a8b6682a64b6168f3f5b6e73d<>res://.godot/imported/praca_igreja_picos_sem_fundo.png-3161682320c05df3c1e11f8bacd3c6d6.ctex::
+praca_museu.jpeg::CompressedTexture2D::9180469650725428074::1779463550::1779804526::1::::<><><>0<>0<>e2c9801c5bfde97dfcd9ddfc3e4bdabb<>res://.godot/imported/praca_museu.jpeg-9019eb85df13328bea0e89b52607a156.ctex::
 praca_ozildo_albano.jpeg::CompressedTexture2D::8861588666391702439::1779452617::1779452617::1::::<><><>0<>0<>1eaa8265e40e2a45b74f9cc25531c8a0<>res://.godot/imported/praca_ozildo_albano.jpeg-81f74d7d7a019317a7957f3ddf8fbe87.ctex::
 seu_ze_abanando_120.png::CompressedTexture2D::7482120222324487225::1779452617::1779452617::1::::<><><>0<>0<>4080250304d60a24e9010c97e8212f8a<>res://.godot/imported/seu_ze_abanando_120.png-623b452e50f510d52fec6c15f277308d.ctex::
 seu_ze_animacao_40_frames.png::CompressedTexture2D::1855317791736205534::1779452617::1779452617::1::::<><><>0<>0<>02342810bbfc46546e4c9ffa2a5369c1<>res://.godot/imported/seu_ze_animacao_40_frames.png-35d04cbb57202f42f72fe911c0f30d83.ctex::
@@ -45,8 +46,8 @@ umbu.png::CompressedTexture2D::7577219699146069930::1779452617::1779452617::1:::
 ype.png::CompressedTexture2D::1130823097756793755::1779452617::1779452617::1::::<><><>0<>0<>27ac521a03341403ee941348a69be8fc<>res://.godot/imported/ype.png-052795500b8fea80e2f511058f9e6b2f.ctex::
 ::res://scenes/::1779452617
 Main.tscn::PackedScene::-1::1779452617::0::1::::<><><>0<>0<><>::res://scripts/main.gd
-::res://scripts/::1779452617
-main.gd::GDScript::5675656087221516802::1779459876::0::1::::<>Node2D<><>0<>0<><>::
+::res://scripts/::1779463684
+main.gd::GDScript::5675656087221516802::1779463684::0::1::::<>Node2D<><>0<>0<><>::
 ::res://Simbora-Piaui/::1779452617
 README.md::TextFile::-1::1779452617::0::1::::<><><>0<>0<><>::
 ::res://Simbora-Piaui/elementos /::1779452617

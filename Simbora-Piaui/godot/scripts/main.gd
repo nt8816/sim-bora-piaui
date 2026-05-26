@@ -29,6 +29,10 @@ const DONA_RITA_FRAME_COUNT := 61
 const DONA_RITA_FPS := 12.0
 const DONA_RITA_COLUMNS := 8
 const DONA_RITA_FRAME_SIZE := Vector2(96, 160)
+const ANA_FRAME_COUNT := 20
+const ANA_FPS := 10.0
+const ANA_COLUMNS := 5
+const ANA_FRAME_SIZE := Vector2(112, 160)
 const CHARACTER_SHEETS: Dictionary = {
 	"male": "res://assets/personagem_masculino.png",
 	"female": "res://assets/personagem_feminina.png"
@@ -59,6 +63,7 @@ var seu_ze_texture: Texture2D = preload("res://assets/seu_ze_lendas.png")
 var seu_ze_idle_texture: Texture2D = preload("res://assets/seu_ze_idle_clean.png")
 var seu_ze_fan_texture: Texture2D
 var dona_rita_texture: Texture2D = preload("res://assets/dona_rita_sheet.png")
+var ana_texture: Texture2D = preload("res://assets/ana_sheet.png")
 var camera_texture: Texture2D = preload("res://assets/camera.png")
 var memory_polaroid_texture: Texture2D = preload("res://assets/memoria_picos_polaroid.png")
 var opening_music_stream: AudioStream = preload("res://assets/audio_abertura_picos.mp3")
@@ -237,9 +242,12 @@ var picos_church_plaza_tile := Vector2i(17, -5)
 var picos_church_plaza_size := Vector2i(64, 32)
 var picos_church_plaza_art_tile := Vector2i(18, 12)
 var picos_church_plaza_art_size := Vector2i(30, 12)
-var dona_rita_tile := Vector2i(57, 5)
+var dona_rita_tile := Vector2i(54, 7)
+var ana_tile := Vector2i(68, 17)
 var dona_rita_dialog_active := false
 var dona_rita_interaction_msec := -1
+var ana_dialog_active := false
+var ana_interaction_msec := -1
 
 
 func _ready() -> void:
@@ -274,6 +282,8 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if handle_dialog_option_shortcut(event):
+		return
 	if opening_active and event is InputEventMouseButton and event.pressed:
 		if handle_opening_pointer(event.position):
 			return
@@ -281,6 +291,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		interact()
 	if event.is_action_pressed("open_collection"):
 		toggle_collection()
+
+
+func handle_dialog_option_shortcut(event: InputEvent) -> bool:
+	if not active_dialog or not answer_box or not event is InputEventKey:
+		return false
+	var key_event := event as InputEventKey
+	if not key_event.pressed or key_event.echo:
+		return false
+	var shortcut_index := -1
+	match key_event.keycode:
+		KEY_A:
+			shortcut_index = 0
+		KEY_B:
+			shortcut_index = 1
+		KEY_C:
+			shortcut_index = 2
+		KEY_D:
+			shortcut_index = 3
+		_:
+			return false
+	var buttons: Array[Button] = []
+	for child in answer_box.get_children():
+		if child is Button and child.visible and not child.disabled:
+			buttons.append(child)
+	if shortcut_index < 0 or shortcut_index >= buttons.size():
+		return false
+	buttons[shortcut_index].pressed.emit()
+	return true
 
 
 func build_audio_players() -> void:
@@ -351,8 +389,9 @@ func clear_player_spawn_area() -> void:
 		if not prop.has("tile"):
 			return true
 		var tile: Vector2i = prop["tile"]
+		var protected_prop: bool = prop.get("type", "") in ["ana_museu", "dona_rita", "church_picos", "picos_sign", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal"]
 		var near_spawn: bool = abs(tile.x - spawn_tile.x) <= 1 and abs(tile.y - spawn_tile.y) <= 2
-		return not near_spawn
+		return protected_prop or not near_spawn
 	)
 
 
@@ -894,6 +933,7 @@ func add_picos_district(sx: int, sy: int) -> void:
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
 	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
+	props.append({"type": "ana_museu", "tile": ana_tile})
 	add_feira_horizontal(picos_church_tile.x + 5, -4)
 	props.append({"type": "dona_rita", "tile": dona_rita_tile})
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
@@ -972,8 +1012,19 @@ func add_picos_church(sx: int, sy: int) -> void:
 
 
 func add_church_collision(sx: int, sy: int) -> void:
-	# The church uses pixel-mask collision in collides_church_sprite().
-	return
+	var world := Vector2(sx, sy) * TILE
+	var texture_size := church_picos_texture.get_size()
+	var draw_w := CHURCH_DRAW_W
+	var draw_h := draw_w * (texture_size.y / texture_size.x)
+	var target := Rect2(world + Vector2(CHURCH_BASE_OFFSET.x, CHURCH_BASE_OFFSET.y - draw_h), Vector2(draw_w, draw_h))
+	var church_collision_rects := [
+		Rect2(Vector2(target.size.x * 0.04, target.size.y * 0.16), Vector2(target.size.x * 0.24, target.size.y * 0.82)),
+		Rect2(Vector2(target.size.x * 0.30, target.size.y * 0.08), Vector2(target.size.x * 0.40, target.size.y * 0.90)),
+		Rect2(Vector2(target.size.x * 0.72, target.size.y * 0.16), Vector2(target.size.x * 0.24, target.size.y * 0.82)),
+		Rect2(Vector2(target.size.x * 0.04, target.size.y * 0.48), Vector2(target.size.x * 0.92, target.size.y * 0.58))
+	]
+	for rect: Rect2 in church_collision_rects:
+		solid_rects.append(Rect2(target.position + rect.position, rect.size))
 
 
 
@@ -1041,7 +1092,7 @@ func add_phase1_diary_pages() -> void:
 		"fact": "A Feira Livre de Picos guarda encontros, trabalho e sabores que ajudam a contar a economia e a vida cotidiana da cidade.",
 		"tile": picos_district_tile + Vector2i(13, 7),
 		"type": "diary_page",
-		"requires": PHASE1_ACCEPTED_ID
+		"requires": "__dona_rita_entrega__"
 	})
 	missions.append({
 		"id": PAGE_MUSEU_ID,
@@ -1051,7 +1102,7 @@ func add_phase1_diary_pages() -> void:
 		"fact": "O Museu Ozildo Albano preserva memórias, objetos e registros que ajudam a cidade a reconhecer sua própria história.",
 		"tile": ozildo_museum_tile + Vector2i(1, 4),
 		"type": "diary_page",
-		"requires": PHASE1_ACCEPTED_ID
+		"requires": "__ana_museu_entrega__"
 	})
 
 
@@ -1357,10 +1408,130 @@ func near_dona_rita() -> bool:
 	return player_pos.distance_to(get_dona_rita_pos()) < 105.0
 
 
+func get_ana_museu_pos() -> Vector2:
+	return Vector2(ana_tile) * TILE
+
+
+func near_ana_museu() -> bool:
+	return player_pos.distance_to(get_ana_museu_pos()) < 105.0
+
+
+func interact_ana_museu() -> void:
+	ana_dialog_active = true
+	ana_interaction_msec = Time.get_ticks_msec()
+	if learned.has(PAGE_MUSEU_ID):
+		show_dialog("Ana", "Você já recebeu a página do Seu Zé. Continue sua jornada com esse olhar curioso pela nossa história!", [])
+		return
+	if not learned.has(PHASE1_ACCEPTED_ID):
+		show_dialog("Ana", "Olá! Seja bem-vindo ao Museu Ozildo Albano. Este espaço guarda a memória viva de Picos e de todo o Vale do Rio Guaribas!", [])
+		return
+	show_ana_intro()
+
+
+func show_ana_intro() -> void:
+	clear_answers()
+	var continue_button := make_button("Continuar")
+	continue_button.pressed.connect(show_ana_player_reply)
+	answer_box.add_child(continue_button)
+	open_dialog("Ana", "Olá! Seja bem-vindo ao Museu Ozildo Albano. Este espaço guarda a memória viva de Picos e de todo o Vale do Rio Guaribas!")
+
+
+func show_ana_player_reply() -> void:
+	clear_answers()
+	var continue_button := make_button("Continuar")
+	continue_button.pressed.connect(show_ana_challenge)
+	answer_box.add_child(continue_button)
+	open_dialog("Jogador", "É incrível! Mas, na verdade, estou ajudando o Seu Zé da Matriz. Uma página do diário dele voou pela janela e disseram que caiu por aqui.")
+
+
+func show_ana_challenge() -> void:
+	clear_answers()
+	var quiz_button := make_button("Responder")
+	quiz_button.pressed.connect(show_ana_quiz)
+	answer_box.add_child(quiz_button)
+	open_dialog("Ana", "Puxa, que coincidência! Ela caiu bem aqui no chão enquanto eu limpava esta imagem de Santa Ana Mestra. Como este é um espaço de educação e pesquisa, proponho um desafio! Se você me provar que conhece o valor da nossa história respondendo a uma pergunta sobre este lugar, eu lhe entrego a página.")
+
+
+func show_ana_quiz() -> void:
+	clear_answers()
+	var options := [
+		"A - Foi construído por uma grande empresa que encontrou objetos soterrados durante uma obra na cidade.",
+		"B - Nasceu da iniciativa do colecionador Ozildo Albano, que reuniu peças da família e da região e abriu o espaço em sua própria casa.",
+		"C - Foi criado pelo Instituto Brasileiro de Museus para guardar exclusivamente o tesouro do Império.",
+		"D - Foi fundado exclusivamente por igrejas locais para guardar apenas oratórios, cálices e imagens de santos antigos."
+	]
+	for i in range(options.size()):
+		var option_index := i
+		var button := make_button(options[i])
+		button.pressed.connect(func(): answer_ana_quiz(option_index))
+		answer_box.add_child(button)
+	open_dialog("Ana", "Como o Museu Ozildo Albano iniciou sua história no ano de 1968?")
+
+
+func answer_ana_quiz(index: int) -> void:
+	if index == 1:
+		learned[PAGE_MUSEU_ID] = true
+		save_progress()
+		update_hud()
+		show_dialog("Ana", "Exatamente! O professor Ozildo era tão apaixonado pela nossa história que começou o museu na própria casa, chamando de Museu-Biblioteca Capitão-mor João Gomes Caminha. Ele atendia pessoalmente estudantes e pesquisadores! Você provou ter o mesmo espírito curioso dele. Aqui está a página do Seu Zé. Parabéns!\n\nPágina do Museu adicionada à mochila.", [])
+		return
+	show_dialog("Ana", "Ainda não foi dessa vez. Observe melhor a história do museu e tente responder novamente.", [])
+
+
+func is_ana_museu_speaking() -> bool:
+	return ana_dialog_active and active_dialog and ana_interaction_msec >= 0
+
+
 func interact_dona_rita() -> void:
 	dona_rita_dialog_active = true
 	dona_rita_interaction_msec = Time.get_ticks_msec()
-	show_dialog("Dona Rita", "Minha banca guarda trabalho, conversa e memória da Feira Livre. Chegue perto, observe os detalhes e veja como cada produto conta um pedaço da cidade.", [])
+	if learned.has(PAGE_FEIRA_ID):
+		show_dialog("Dona Rita", "Arretado! Já entreguei o papel que caiu nos sacos de castanha. Vá com Deus na sua missão!", [])
+		return
+	show_dona_rita_intro()
+
+
+func show_dona_rita_intro() -> void:
+	clear_answers()
+	var option_a := make_button("A - Hoje não, Dona Rita. Estou procurando uma página de um diário antigo que voou para cá.")
+	option_a.pressed.connect(show_dona_rita_paper_clue)
+	answer_box.add_child(option_a)
+	var option_b := make_button("B - Só estou olhando as barracas mesmo.")
+	option_b.pressed.connect(func(): show_dialog("Dona Rita", "Pois olhe com calma, menino. A feira hoje está um fervo, mas sempre cabe mais uma história entre uma banca e outra.", []))
+	answer_box.add_child(option_b)
+	open_dialog("Dona Rita", "Ei, menino! Cuidado por onde anda, que a feira hoje está um fervo! Vai levar uma cajuína gelada pra rebater esse calor?")
+
+
+func show_dona_rita_paper_clue() -> void:
+	clear_answers()
+	var start_quiz := make_button("Responder")
+	start_quiz.pressed.connect(show_dona_rita_quiz)
+	answer_box.add_child(start_quiz)
+	open_dialog("Dona Rita", "Ah, aquele papel amarelo que veio voando agorinha? Caiu bem ali no meio dos sacos de castanha. Mas olha, eu só te entrego se você me provar que conhece a nossa terra.\n\nResponda rápido: Qual é o principal produto que faz Picos ser conhecida como capital em todo o Brasil?")
+
+
+func show_dona_rita_quiz() -> void:
+	clear_answers()
+	var options := ["A - A Cajuína.", "B - A Farinha de Mandioca.", "C - O Mel de Abelha.", "D - Castanha."]
+	for i in range(options.size()):
+		var button := make_button(options[i])
+		button.pressed.connect(func(): answer_dona_rita_quiz(i))
+		answer_box.add_child(button)
+	open_dialog("Dona Rita", "Qual é o principal produto que faz Picos ser conhecida como capital em todo o Brasil?")
+
+
+func answer_dona_rita_quiz(index: int) -> void:
+	if index == 2:
+		learned[PAGE_FEIRA_ID] = true
+		save_progress()
+		update_hud()
+		show_dialog("Dona Rita", "Arretado! O nosso mel é o melhor que tem, orgulho da nossa região. Pode pegar o seu papel ali, e vá com Deus na sua missão!\n\nPágina da Feira Livre adicionada à mochila.", [])
+		return
+	show_dialog("Dona Rita", "Ainda não foi dessa vez. Pense no produto doce que também conta a força da nossa região e tente de novo.", [])
+
+
+func is_dona_rita_speaking() -> bool:
+	return dona_rita_dialog_active and active_dialog and dona_rita_interaction_msec >= 0
 
 
 func near_seu_ze() -> bool:
@@ -1381,6 +1552,9 @@ func interact() -> void:
 		return
 	if near_dona_rita():
 		interact_dona_rita()
+		return
+	if near_ana_museu():
+		interact_ana_museu()
 		return
 
 	var mission: Variant = nearest_mission()
@@ -1561,6 +1735,9 @@ func update_dialog_typewriter(delta: float) -> void:
 
 func close_dialog() -> void:
 	dona_rita_dialog_active = false
+	dona_rita_interaction_msec = -1
+	ana_dialog_active = false
+	ana_interaction_msec = -1
 	active_dialog = false
 	active_mission = null
 	dialog_typewriter_done = true
@@ -1951,10 +2128,10 @@ func build_menu_modal() -> void:
 	menu_modal.anchor_top = 0.5
 	menu_modal.anchor_right = 0.5
 	menu_modal.anchor_bottom = 0.5
-	menu_modal.offset_left = -360
-	menu_modal.offset_top = -230
-	menu_modal.offset_right = 360
-	menu_modal.offset_bottom = 230
+	menu_modal.offset_left = -320
+	menu_modal.offset_top = -205
+	menu_modal.offset_right = 320
+	menu_modal.offset_bottom = 205
 	menu_modal.add_theme_stylebox_override("panel", make_panel_style(Color(0.23, 0.11, 0.055, 0.97), Color("#ffc247")))
 	start_layer.add_child(menu_modal)
 
@@ -1966,25 +2143,26 @@ func build_menu_modal() -> void:
 	menu_modal.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
+	box.add_theme_constant_override("separation", 8)
 	margin.add_child(box)
 
 	var header := HBoxContainer.new()
 	box.add_child(header)
-	menu_modal_title = make_label("", 26)
+	menu_modal_title = make_label("", 24)
 	menu_modal_title.add_theme_color_override("font_color", Color("#ffc247"))
 	header.add_child(menu_modal_title)
 	header.add_spacer(false)
 	var close := make_button("Fechar")
+	close.custom_minimum_size = Vector2(92, 34)
 	close.pressed.connect(close_menu_modal)
 	header.add_child(close)
 
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(660, 350)
-	box.add_child(scroll)
 	menu_modal_body = VBoxContainer.new()
-	menu_modal_body.add_theme_constant_override("separation", 10)
-	scroll.add_child(menu_modal_body)
+	menu_modal_body.custom_minimum_size = Vector2(600, 270)
+	menu_modal_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	menu_modal_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	menu_modal_body.add_theme_constant_override("separation", 4)
+	box.add_child(menu_modal_body)
 
 
 func open_menu_modal(title: String) -> void:
@@ -2001,16 +2179,19 @@ func close_menu_modal() -> void:
 
 func show_options_menu() -> void:
 	open_menu_modal("Opções")
-	add_slider_setting("Volume da música", "music_volume", 0, 100)
-	add_slider_setting("Volume dos efeitos", "sfx_volume", 0, 100)
-	add_option_setting("Dificuldade", "difficulty", {"Fácil": "easy", "Normal": "normal", "Difícil": "hard"})
-	add_check_setting("Controles de toque", "touch_controls")
-	add_check_setting("Tela cheia", "fullscreen")
+	menu_modal_body.add_theme_constant_override("separation", 4)
+	add_options_slider("Volume da música", "music_volume", 0, 100)
+	add_options_slider("Volume dos efeitos", "sfx_volume", 0, 100)
+	add_options_choice("Dificuldade", "difficulty", {"Fácil": "easy", "Normal": "normal", "Difícil": "hard"})
+	add_options_toggle("Controles de toque", "touch_controls")
+	add_options_toggle("Tela cheia", "fullscreen")
 
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 8)
+	actions.custom_minimum_size = Vector2(0, 34)
 	menu_modal_body.add_child(actions)
 	var reset := make_button("Zerar progresso")
+	reset.custom_minimum_size = Vector2(150, 34)
 	reset.pressed.connect(func():
 		learned.clear()
 		redeemed.clear()
@@ -2021,6 +2202,7 @@ func show_options_menu() -> void:
 	)
 	actions.add_child(reset)
 	var defaults := make_button("Padrão")
+	defaults.custom_minimum_size = Vector2(100, 34)
 	defaults.pressed.connect(func():
 		settings["music_volume"] = 70.0
 		settings["sfx_volume"] = 80.0
@@ -2034,27 +2216,35 @@ func show_options_menu() -> void:
 	actions.add_child(defaults)
 
 
-func add_slider_setting(title: String, key: String, min_value: float, max_value: float) -> void:
-	var row := make_setting_row(title, "%d%%" % int(settings[key]))
+func add_options_slider(title: String, key: String, min_value: float, max_value: float) -> void:
+	var row := make_options_row(title)
+	var value_label := make_label("%d%%" % int(settings[key]), 16)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.custom_minimum_size = Vector2(52, 0)
+	row.add_child(value_label)
 	var slider := HSlider.new()
 	slider.min_value = min_value
 	slider.max_value = max_value
 	slider.step = 1
 	slider.value = float(settings[key])
-	slider.custom_minimum_size = Vector2(260, 34)
+	slider.custom_minimum_size = Vector2(220, 30)
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.value_changed.connect(func(value: float):
 		settings[key] = value
-		row.get_child(0).get_child(1).text = "%d%%" % int(value)
+		value_label.text = "%d%%" % int(value)
 		save_settings()
 		apply_settings()
 	)
 	row.add_child(slider)
 
 
-func add_option_setting(title: String, key: String, options: Dictionary) -> void:
-	var row := make_setting_row(title, "Configuração padrão de jogo.")
+func add_options_choice(title: String, key: String, options: Dictionary) -> void:
+	var row := make_options_row(title)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
 	var option := OptionButton.new()
-	option.custom_minimum_size = Vector2(180, 40)
+	option.custom_minimum_size = Vector2(180, 34)
 	var index := 0
 	var selected := 0
 	for label in options:
@@ -2072,11 +2262,85 @@ func add_option_setting(title: String, key: String, options: Dictionary) -> void
 	row.add_child(option)
 
 
-func add_check_setting(title: String, key: String) -> void:
-	var row := make_setting_row(title, "Ligado/desligado.")
+func add_options_toggle(title: String, key: String) -> void:
+	var row := make_options_row(title)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
 	var check := CheckButton.new()
+	check.custom_minimum_size = Vector2(135, 34)
+	check.text = "Ligado" if bool(settings[key]) else "Desligado"
 	check.button_pressed = bool(settings[key])
 	check.toggled.connect(func(pressed: bool):
+		check.text = "Ligado" if pressed else "Desligado"
+		settings[key] = pressed
+		save_settings()
+		apply_settings()
+	)
+	row.add_child(check)
+
+
+func make_options_row(title: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, 38)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	menu_modal_body.add_child(row)
+	var label := make_label(title, 16)
+	label.add_theme_color_override("font_color", Color("#ffe6a7"))
+	label.custom_minimum_size = Vector2(220, 0)
+	row.add_child(label)
+	return row
+
+
+func add_slider_setting(title: String, key: String, min_value: float, max_value: float) -> void:
+	var row := make_setting_row(title, "%d%%" % int(settings[key]))
+	var slider := HSlider.new()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = 1
+	slider.value = float(settings[key])
+	slider.custom_minimum_size = Vector2(300, 40)
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(func(value: float):
+		settings[key] = value
+		row.get_child(0).get_child(1).text = "%d%%" % int(value)
+		save_settings()
+		apply_settings()
+	)
+	row.add_child(slider)
+
+
+func add_option_setting(title: String, key: String, options: Dictionary) -> void:
+	var row := make_setting_row(title, "Configuração padrão de jogo.")
+	var option := OptionButton.new()
+	option.custom_minimum_size = Vector2(220, 42)
+	var index := 0
+	var selected := 0
+	for label in options:
+		option.add_item(label)
+		option.set_item_metadata(index, options[label])
+		if options[label] == settings[key]:
+			selected = index
+		index += 1
+	option.selected = selected
+	option.item_selected.connect(func(item_index: int):
+		settings[key] = option.get_item_metadata(item_index)
+		save_settings()
+		apply_settings()
+	)
+	row.add_child(option)
+
+
+func add_check_setting(title: String, key: String, description: String) -> void:
+	var row := make_setting_row(title, description)
+	var check := CheckButton.new()
+	check.custom_minimum_size = Vector2(150, 42)
+	check.text = "Ligado" if bool(settings[key]) else "Desligado"
+	check.button_pressed = bool(settings[key])
+	check.toggled.connect(func(pressed: bool):
+		check.text = "Ligado" if pressed else "Desligado"
 		settings[key] = pressed
 		save_settings()
 		apply_settings()
@@ -2086,16 +2350,21 @@ func add_check_setting(title: String, key: String) -> void:
 
 func make_setting_row(title: String, description: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
+	row.custom_minimum_size = Vector2(0, 68)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 18)
 	menu_modal_body.add_child(row)
 	var text_box := VBoxContainer.new()
+	text_box.custom_minimum_size = Vector2(330, 0)
 	text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text_box)
-	var label := make_label(title, 18)
+	var label := make_label(title, 17)
 	label.add_theme_color_override("font_color", Color("#ffe6a7"))
 	text_box.add_child(label)
-	var detail := make_label(description, 14)
+	var detail := make_label(description, 13)
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_box.add_child(detail)
 	return row
 
@@ -2158,9 +2427,9 @@ func build_dialog_ui() -> void:
 	dialog_panel.anchor_top = 1
 	dialog_panel.anchor_right = 0.5
 	dialog_panel.anchor_bottom = 1
-	dialog_panel.offset_left = -380
-	dialog_panel.offset_top = -185
-	dialog_panel.offset_right = 380
+	dialog_panel.offset_left = -470
+	dialog_panel.offset_top = -260
+	dialog_panel.offset_right = 470
 	dialog_panel.offset_bottom = -18
 	hud_layer.add_child(dialog_panel)
 
@@ -2184,10 +2453,14 @@ func build_dialog_ui() -> void:
 	dialog_text.add_theme_font_override("font", typewriter_font)
 	dialog_text.add_theme_constant_override("line_spacing", 4)
 	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dialog_text.custom_minimum_size = Vector2(0, 96)
+	dialog_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(dialog_text)
 
 	answer_box = VBoxContainer.new()
-	answer_box.add_theme_constant_override("separation", 8)
+	answer_box.custom_minimum_size = Vector2(0, 92)
+	answer_box.size_flags_vertical = Control.SIZE_SHRINK_END
+	answer_box.add_theme_constant_override("separation", 6)
 	box.add_child(answer_box)
 
 
@@ -2322,7 +2595,10 @@ func make_button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_font_size_override("font_size", 16)
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	button.custom_minimum_size = Vector2(0, 42)
+	button.add_theme_font_size_override("font_size", 15)
 	return button
 
 
@@ -3165,6 +3441,8 @@ func get_prop_depth_y(prop: Dictionary) -> float:
 			return tile.y + 8.0
 		"dona_rita":
 			return tile.y + 2.6
+		"ana_museu":
+			return tile.y + 2.5
 		"museum_picos":
 			return tile.y + 4.0
 		"church_picos":
@@ -3206,6 +3484,8 @@ func draw_prop(prop: Dictionary) -> void:
 			draw_feira_horizontal(pos, "bancas")
 		"dona_rita":
 			draw_dona_rita(pos)
+		"ana_museu":
+			draw_ana_museu(pos)
 		"market_stall":
 			draw_market_stall(pos, prop.get("variant", 0))
 		"produce_crate":
@@ -3423,7 +3703,7 @@ func draw_dona_rita(pos: Vector2) -> void:
 		draw_npc(pos, "feira_picos")
 		return
 	var frame_index := 0
-	if dona_rita_dialog_active and active_dialog and dona_rita_interaction_msec >= 0:
+	if is_dona_rita_speaking():
 		var elapsed := float(Time.get_ticks_msec() - dona_rita_interaction_msec) / 1000.0
 		frame_index = int(floor(elapsed * DONA_RITA_FPS)) % DONA_RITA_FRAME_COUNT
 	var frame_col := frame_index % DONA_RITA_COLUMNS
@@ -3434,6 +3714,24 @@ func draw_dona_rita(pos: Vector2) -> void:
 	draw_ellipse_shadow(pos + Vector2(0, 14), Vector2(18, 4), 0.14)
 	var target := Rect2(pos + Vector2(-draw_w * 0.5, -draw_h + 18.0), Vector2(draw_w, draw_h))
 	draw_texture_rect_region(dona_rita_texture, target, region)
+
+
+func draw_ana_museu(pos: Vector2) -> void:
+	if ana_texture == null:
+		draw_npc(pos, "museu_ozildo")
+		return
+	var frame_index := 0
+	if is_ana_museu_speaking():
+		var elapsed := float(Time.get_ticks_msec() - ana_interaction_msec) / 1000.0
+		frame_index = int(floor(elapsed * ANA_FPS)) % ANA_FRAME_COUNT
+	var frame_col := frame_index % ANA_COLUMNS
+	var frame_row := floori(float(frame_index) / float(ANA_COLUMNS))
+	var region := Rect2(Vector2(frame_col, frame_row) * ANA_FRAME_SIZE, ANA_FRAME_SIZE)
+	var draw_h := 132.0
+	var draw_w := draw_h * (ANA_FRAME_SIZE.x / ANA_FRAME_SIZE.y)
+	draw_ellipse_shadow(pos + Vector2(0, 14), Vector2(18, 4), 0.14)
+	var target := Rect2(pos + Vector2(-draw_w * 0.5, -draw_h + 18.0), Vector2(draw_w, draw_h))
+	draw_texture_rect_region(ana_texture, target, region)
 
 
 func draw_missions() -> void:
