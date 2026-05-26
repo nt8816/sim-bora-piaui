@@ -37,6 +37,7 @@ var hero_walk_sheet: Texture2D
 var logo_texture: Texture2D = preload("res://assets/logo_simbora.png")
 var dynamic_dirt_texture: Texture2D = preload("res://assets/terra_dinamica.png")
 var ozildo_plaza_texture: Texture2D = preload("res://assets/praca_ozildo_albano.jpeg")
+var museum_plaza_texture: Texture2D = preload("res://assets/praca_museu.jpeg")
 var church_plaza_texture: Texture2D = preload("res://assets/praca_igreja_picos_hd.png")
 var cactus_texture: Texture2D = preload("res://assets/cacto_pixel.png")
 var museum_picos_texture: Texture2D = preload("res://assets/museu_picos.png")
@@ -213,9 +214,9 @@ var menu_hitbox_buttons := []
 var menu_highlights := []
 var character_buttons := {}
 var picos_district_tile := Vector2i(40, 15)
-var ozildo_museum_tile := Vector2i(31, 20)
-var ozildo_plaza_tile := Vector2i(26, 18)
-var ozildo_plaza_size := Vector2i(12, 8)
+var ozildo_museum_tile := Vector2i(66, 15)
+var ozildo_plaza_tile := Vector2i(54, 9)
+var ozildo_plaza_size := Vector2i(25, 14)
 var picos_church_tile := Vector2i(33, 9)
 var picos_church_plaza_tile := Vector2i(17, 0)
 var picos_church_plaza_size := Vector2i(64, 27)
@@ -638,9 +639,9 @@ func add_picos_district(sx: int, sy: int) -> void:
 	add_picos_sign_collision(picos_sign_tile)
 	add_picos_market(sx - 11, sy + 6)
 	add_picos_church(picos_church_tile.x, picos_church_tile.y)
-	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
+	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
 
 
@@ -2563,42 +2564,25 @@ func draw_dynamic_dirt_tile(rect: Rect2, x: int, y: int) -> void:
 
 func draw_ozildo_plaza() -> void:
 	var area := Rect2(Vector2(ozildo_plaza_tile) * TILE - camera_pos, Vector2(ozildo_plaza_size) * TILE)
-	draw_rect(area.grow(5.0), Color(0.19, 0.16, 0.11, 0.20), true)
-	draw_rect(area, Color("#d7c8a5"), true)
+	draw_rect(area.grow(5.0), Color(0.16, 0.14, 0.10, 0.22), true)
+	draw_rect(area, Color("#cfc4a6"), true)
 	for x in range(ozildo_plaza_tile.x, ozildo_plaza_tile.x + ozildo_plaza_size.x):
 		for y in range(ozildo_plaza_tile.y, ozildo_plaza_tile.y + ozildo_plaza_size.y):
 			draw_plaza_tile(world_rect(Vector2i(x, y)), x, y)
-	draw_rect(area.grow(-8.0), Color("#8a7654"), false, 3.0)
-	draw_rect(area.grow(-14.0), Color(1, 1, 1, 0.10), false, 1.0)
+	draw_rect(area, Color("#74664c"), false, 3.0)
 
-	var entry := Rect2(Vector2(ozildo_museum_tile.x - 1, ozildo_museum_tile.y + 3) * TILE - camera_pos, Vector2(4 * TILE, 5 * TILE))
-	draw_rect(entry, Color("#b48a55"), true)
-	for y in range(0, 5):
-		var line_y := entry.position.y + y * TILE + TILE * 0.5
-		draw_line(Vector2(entry.position.x, line_y), Vector2(entry.position.x + entry.size.x, line_y), Color(0.42, 0.27, 0.14, 0.28), 1.0)
-	draw_rect(entry, Color("#6f5132"), false, 2.0)
+	if museum_plaza_texture:
+		var texture_size := museum_plaza_texture.get_size()
+		var draw_h := area.size.x * (texture_size.y / texture_size.x)
+		var draw_size := Vector2(area.size.x, draw_h)
+		if draw_h > area.size.y:
+			draw_size = Vector2(area.size.y * (texture_size.x / texture_size.y), area.size.y)
+		var target := Rect2(area.position + (area.size - draw_size) * 0.5, draw_size)
+		draw_texture_rect(museum_plaza_texture, target, false)
 
-	for garden in [
-		Rect2(area.position + Vector2(24, 24), Vector2(92, 36)),
-		Rect2(area.position + Vector2(area.size.x - 116, 24), Vector2(92, 36)),
-		Rect2(area.position + Vector2(24, area.size.y - 58), Vector2(116, 34)),
-		Rect2(area.position + Vector2(area.size.x - 140, area.size.y - 58), Vector2(116, 34))
-	]:
-		draw_rect(garden, Color("#715137"), true)
-		draw_rect(garden.grow(-5.0), Color("#4f873c"), true)
-		draw_rect(garden, Color("#e0c17b"), false, 2.0)
-		for i in range(3):
-			draw_circle(garden.position + Vector2(22 + i * 28, garden.size.y * 0.5), 5.0, Color("#f5d35c"))
-
-	if ozildo_plaza_texture == null:
-		return
-	var texture_size := ozildo_plaza_texture.get_size()
-	var draw_h := area.size.x * (texture_size.y / texture_size.x)
-	var draw_size := Vector2(area.size.x, draw_h)
-	if draw_h > area.size.y:
-		draw_size = Vector2(area.size.y * (texture_size.x / texture_size.y), area.size.y)
-	var target := Rect2(area.position + (area.size - draw_size) * 0.5, draw_size)
-	draw_texture_rect(ozildo_plaza_texture, target, false, Color(1, 1, 1, 0.16))
+	var entry := Rect2(Vector2(ozildo_museum_tile.x - 2, ozildo_museum_tile.y + 3) * TILE - camera_pos, Vector2(5 * TILE, 4 * TILE))
+	draw_rect(entry, Color(0.72, 0.62, 0.46, 0.55), true)
+	draw_rect(entry, Color("#74664c"), false, 2.0)
 
 
 func draw_church_plaza() -> void:

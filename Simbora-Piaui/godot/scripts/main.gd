@@ -1,7 +1,7 @@
 extends Node2D
 
 const TILE := 48
-const WORLD_W := 82
+const WORLD_W := 104
 const WORLD_TOP_TILE := -8
 const WORLD_H := 30
 const PLAYER_SPEED := 150.0
@@ -25,6 +25,10 @@ const SEU_ZE_FAN_LOOP_START_FRAME := 55
 const SEU_ZE_FAN_FPS := 18.0
 const SEU_ZE_FAN_CROP_X_RATIO := 430.0 / 1950.0
 const SEU_ZE_FAN_CROP_WIDTH_RATIO := 1040.0 / 1950.0
+const DONA_RITA_FRAME_COUNT := 61
+const DONA_RITA_FPS := 12.0
+const DONA_RITA_COLUMNS := 8
+const DONA_RITA_FRAME_SIZE := Vector2(96, 160)
 const CHARACTER_SHEETS: Dictionary = {
 	"male": "res://assets/personagem_masculino.png",
 	"female": "res://assets/personagem_feminina.png"
@@ -38,6 +42,7 @@ var hero_walk_sheet: Texture2D
 var logo_texture: Texture2D = preload("res://assets/logo_simbora.png")
 var dynamic_dirt_texture: Texture2D = preload("res://assets/terra_dinamica.png")
 var ozildo_plaza_texture: Texture2D = preload("res://assets/praca_ozildo_albano.jpeg")
+var museum_plaza_texture: Texture2D = preload("res://assets/praca_museu_completa.png")
 var church_plaza_texture: Texture2D = preload("res://assets/praca_igreja_picos_hd.png")
 var cactus_texture: Texture2D = preload("res://assets/cacto_pixel.png")
 var museum_picos_texture: Texture2D = preload("res://assets/museu_picos.png")
@@ -53,6 +58,7 @@ var feira_bancas_texture: Texture2D = preload("res://assets/feira_bancas_horizon
 var seu_ze_texture: Texture2D = preload("res://assets/seu_ze_lendas.png")
 var seu_ze_idle_texture: Texture2D = preload("res://assets/seu_ze_idle_clean.png")
 var seu_ze_fan_texture: Texture2D
+var dona_rita_texture: Texture2D = preload("res://assets/dona_rita_sheet.png")
 var camera_texture: Texture2D = preload("res://assets/camera.png")
 var memory_polaroid_texture: Texture2D = preload("res://assets/memoria_picos_polaroid.png")
 var opening_music_stream: AudioStream = preload("res://assets/audio_abertura_picos.mp3")
@@ -223,14 +229,17 @@ var menu_hitbox_buttons := []
 var menu_highlights := []
 var character_buttons := {}
 var picos_district_tile := Vector2i(40, 15)
-var ozildo_museum_tile := Vector2i(31, 20)
-var ozildo_plaza_tile := Vector2i(26, 18)
-var ozildo_plaza_size := Vector2i(12, 8)
+var ozildo_museum_tile := Vector2i(73, 13)
+var ozildo_plaza_tile := Vector2i(46, 7)
+var ozildo_plaza_size := Vector2i(45, 19)
 var picos_church_tile := Vector2i(33, 9)
 var picos_church_plaza_tile := Vector2i(17, -5)
 var picos_church_plaza_size := Vector2i(64, 32)
 var picos_church_plaza_art_tile := Vector2i(18, 12)
 var picos_church_plaza_art_size := Vector2i(30, 12)
+var dona_rita_tile := Vector2i(57, 5)
+var dona_rita_dialog_active := false
+var dona_rita_interaction_msec := -1
 
 
 func _ready() -> void:
@@ -469,9 +478,9 @@ func load_tree_sprites() -> void:
 
 
 func load_special_sprites() -> void:
-	feira_adaptada_sprite = make_light_background_sprite(feira_adaptada_texture)
-	feira_roupas_sprite = make_light_background_sprite(feira_roupas_texture)
-	feira_bancas_sprite = make_light_background_sprite(feira_bancas_texture)
+	feira_adaptada_sprite = make_light_background_sprite(feira_adaptada_texture, true, 0.62)
+	feira_roupas_sprite = make_light_background_sprite(feira_roupas_texture, true, 0.52)
+	feira_bancas_sprite = make_light_background_sprite(feira_bancas_texture, true, 0.52)
 	cactus_sprite = make_clean_sprite(cactus_texture, true)
 	museum_picos_sprite = make_clean_sprite(museum_picos_texture, true)
 	church_picos_sprite = make_clean_sprite(church_picos_texture, true)
@@ -663,13 +672,14 @@ func erase_flooded_dark_background(image: Image) -> void:
 
 
 
-func make_light_background_sprite(texture: Texture2D) -> Dictionary:
+func make_light_background_sprite(texture: Texture2D, clean_lower_light_regions: bool = false, lower_start_ratio: float = 0.52) -> Dictionary:
 	var image := texture.get_image()
 	if image == null:
 		return {}
 	image.convert(Image.FORMAT_RGBA8)
 	erase_flooded_light_background(image)
-	erase_large_lower_light_regions(image)
+	if clean_lower_light_regions:
+		erase_large_lower_light_regions(image, lower_start_ratio)
 	return crop_visible_image(image)
 
 
@@ -706,10 +716,10 @@ func erase_flooded_light_background(image: Image) -> void:
 		queue.append(p + Vector2i(0, -1))
 
 
-func erase_large_lower_light_regions(image: Image) -> void:
+func erase_large_lower_light_regions(image: Image, start_ratio: float) -> void:
 	var w := image.get_width()
 	var h := image.get_height()
-	var start_y := int(h * 0.38)
+	var start_y := int(h * start_ratio)
 	var visited := {}
 	for y in range(start_y, h):
 		for x in range(w):
@@ -881,10 +891,11 @@ func add_picos_district(sx: int, sy: int) -> void:
 	props.append({"type": "picos_sign", "tile": picos_sign_tile})
 	add_picos_sign_collision(picos_sign_tile)
 	add_picos_church(picos_church_tile.x, picos_church_tile.y)
-	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
+	add_picos_museum(ozildo_museum_tile.x, ozildo_museum_tile.y)
 	add_feira_horizontal(picos_church_tile.x + 5, -4)
+	props.append({"type": "dona_rita", "tile": dona_rita_tile})
 	add_church_collision(picos_church_tile.x, picos_church_tile.y)
 
 
@@ -899,7 +910,7 @@ func clear_church_plaza_props() -> void:
 			return true
 		var tile: Vector2i = prop["tile"]
 		var inside_plaza: bool = tile.x >= picos_church_plaza_tile.x and tile.x < picos_church_plaza_tile.x + picos_church_plaza_size.x and tile.y >= picos_church_plaza_tile.y and tile.y < picos_church_plaza_tile.y + picos_church_plaza_size.y
-		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "picos_sign", "museum_picos", "market_stall", "produce_crate", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal"]
+		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "picos_sign", "museum_picos", "market_stall", "produce_crate", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal", "dona_rita"]
 		return keep_landmark or not inside_plaza
 	)
 
@@ -932,14 +943,28 @@ func add_picos_sign_collision(tile: Vector2i) -> void:
 
 
 func add_picos_museum(sx: int, sy: int) -> void:
-	props.append({"type": "museum_picos", "tile": Vector2i(sx, sy)})
 	for x in range(ozildo_plaza_tile.x, ozildo_plaza_tile.x + ozildo_plaza_size.x):
 		for y in range(ozildo_plaza_tile.y, ozildo_plaza_tile.y + ozildo_plaza_size.y):
 			plaza_tiles[tile_key(x, y)] = true
 			road_tiles.erase(tile_key(x, y))
-	for x in range(sx - 4, sx + 6):
-		for y in range(sy - 2, sy + 4):
-			add_solid(x, y)
+	var area_pos := Vector2(ozildo_plaza_tile) * TILE
+	var area_size := Vector2(ozildo_plaza_size) * TILE
+	var draw_w := 1536.0
+	var draw_h := 1024.0
+	var target_pos := area_pos + Vector2((area_size.x - draw_w) * 0.5, 100.0)
+	var museum_collision_rects := [
+		Rect2(Vector2(455.0, 35.0), Vector2(630.0, 285.0)),
+		Rect2(Vector2(70.0, 200.0), Vector2(340.0, 130.0)),
+		Rect2(Vector2(1090.0, 200.0), Vector2(360.0, 130.0)),
+		Rect2(Vector2(810.0, 315.0), Vector2(270.0, 145.0)),
+		Rect2(Vector2(70.0, 520.0), Vector2(280.0, 125.0)),
+		Rect2(Vector2(1180.0, 520.0), Vector2(275.0, 125.0)),
+		Rect2(Vector2(55.0, 760.0), Vector2(485.0, 130.0)),
+		Rect2(Vector2(955.0, 760.0), Vector2(485.0, 130.0)),
+		Rect2(Vector2(675.0, 710.0), Vector2(170.0, 170.0))
+	]
+	for rect: Rect2 in museum_collision_rects:
+		solid_rects.append(Rect2(target_pos + rect.position, rect.size))
 
 
 func add_picos_church(sx: int, sy: int) -> void:
@@ -1324,6 +1349,20 @@ func nearest_mission() -> Variant:
 	return null
 
 
+func get_dona_rita_pos() -> Vector2:
+	return Vector2(dona_rita_tile) * TILE
+
+
+func near_dona_rita() -> bool:
+	return player_pos.distance_to(get_dona_rita_pos()) < 105.0
+
+
+func interact_dona_rita() -> void:
+	dona_rita_dialog_active = true
+	dona_rita_interaction_msec = Time.get_ticks_msec()
+	show_dialog("Dona Rita", "Minha banca guarda trabalho, conversa e memória da Feira Livre. Chegue perto, observe os detalhes e veja como cada produto conta um pedaço da cidade.", [])
+
+
 func near_seu_ze() -> bool:
 	return player_pos.distance_to(get_seu_ze_pos()) < 125.0
 
@@ -1339,6 +1378,9 @@ func interact() -> void:
 		return
 	if near_seu_ze():
 		interact_seu_ze_phase1()
+		return
+	if near_dona_rita():
+		interact_dona_rita()
 		return
 
 	var mission: Variant = nearest_mission()
@@ -1518,6 +1560,7 @@ func update_dialog_typewriter(delta: float) -> void:
 
 
 func close_dialog() -> void:
+	dona_rita_dialog_active = false
 	active_dialog = false
 	active_mission = null
 	dialog_typewriter_done = true
@@ -2862,42 +2905,18 @@ func draw_dynamic_dirt_tile(rect: Rect2, x: int, y: int) -> void:
 
 func draw_ozildo_plaza() -> void:
 	var area := Rect2(Vector2(ozildo_plaza_tile) * TILE - camera_pos, Vector2(ozildo_plaza_size) * TILE)
-	draw_rect(area.grow(5.0), Color(0.19, 0.16, 0.11, 0.20), true)
-	draw_rect(area, Color("#d7c8a5"), true)
+	if museum_plaza_texture:
+		var texture_size := museum_plaza_texture.get_size()
+		var draw_w := minf(area.size.x - 96.0, texture_size.x)
+		var draw_h := draw_w * (texture_size.y / texture_size.x)
+		var target := Rect2(area.position + Vector2((area.size.x - draw_w) * 0.5, 100.0), Vector2(draw_w, draw_h))
+		draw_texture_rect(museum_plaza_texture, target, false)
+		return
+
+	draw_rect(area, Color("#cfc4a6"), true)
 	for x in range(ozildo_plaza_tile.x, ozildo_plaza_tile.x + ozildo_plaza_size.x):
 		for y in range(ozildo_plaza_tile.y, ozildo_plaza_tile.y + ozildo_plaza_size.y):
 			draw_plaza_tile(world_rect(Vector2i(x, y)), x, y)
-	draw_rect(area.grow(-8.0), Color("#8a7654"), false, 3.0)
-	draw_rect(area.grow(-14.0), Color(1, 1, 1, 0.10), false, 1.0)
-
-	var entry := Rect2(Vector2(ozildo_museum_tile.x - 1, ozildo_museum_tile.y + 3) * TILE - camera_pos, Vector2(4 * TILE, 5 * TILE))
-	draw_rect(entry, Color("#b48a55"), true)
-	for y in range(0, 5):
-		var line_y := entry.position.y + y * TILE + TILE * 0.5
-		draw_line(Vector2(entry.position.x, line_y), Vector2(entry.position.x + entry.size.x, line_y), Color(0.42, 0.27, 0.14, 0.28), 1.0)
-	draw_rect(entry, Color("#6f5132"), false, 2.0)
-
-	for garden in [
-		Rect2(area.position + Vector2(24, 24), Vector2(92, 36)),
-		Rect2(area.position + Vector2(area.size.x - 116, 24), Vector2(92, 36)),
-		Rect2(area.position + Vector2(24, area.size.y - 58), Vector2(116, 34)),
-		Rect2(area.position + Vector2(area.size.x - 140, area.size.y - 58), Vector2(116, 34))
-	]:
-		draw_rect(garden, Color("#715137"), true)
-		draw_rect(garden.grow(-5.0), Color("#4f873c"), true)
-		draw_rect(garden, Color("#e0c17b"), false, 2.0)
-		for i in range(3):
-			draw_circle(garden.position + Vector2(22 + i * 28, garden.size.y * 0.5), 5.0, Color("#f5d35c"))
-
-	if ozildo_plaza_texture == null:
-		return
-	var texture_size := ozildo_plaza_texture.get_size()
-	var draw_h := area.size.x * (texture_size.y / texture_size.x)
-	var draw_size := Vector2(area.size.x, draw_h)
-	if draw_h > area.size.y:
-		draw_size = Vector2(area.size.y * (texture_size.x / texture_size.y), area.size.y)
-	var target := Rect2(area.position + (area.size - draw_size) * 0.5, draw_size)
-	draw_texture_rect(ozildo_plaza_texture, target, false, Color(1, 1, 1, 0.16))
 
 
 func draw_church_plaza() -> void:
@@ -2905,7 +2924,6 @@ func draw_church_plaza() -> void:
 	for x in range(picos_church_plaza_tile.x, picos_church_plaza_tile.x + picos_church_plaza_size.x):
 		for y in range(picos_church_plaza_tile.y, picos_church_plaza_tile.y + picos_church_plaza_size.y):
 			draw_plaza_tile(world_rect(Vector2i(x, y)), x, y)
-	draw_rect(area, Color(0.45, 0.31, 0.16, 0.14), false, 2.0)
 
 	if church_plaza_texture:
 		var art_area := Rect2(Vector2(picos_church_plaza_art_tile) * TILE - camera_pos, Vector2(picos_church_plaza_art_size) * TILE)
@@ -3145,6 +3163,8 @@ func get_prop_depth_y(prop: Dictionary) -> float:
 			return tile.y + 7.0
 		"feira_adaptada":
 			return tile.y + 8.0
+		"dona_rita":
+			return tile.y + 2.6
 		"museum_picos":
 			return tile.y + 4.0
 		"church_picos":
@@ -3184,6 +3204,8 @@ func draw_prop(prop: Dictionary) -> void:
 			draw_feira_horizontal(pos, "roupas")
 		"feira_bancas_horizontal":
 			draw_feira_horizontal(pos, "bancas")
+		"dona_rita":
+			draw_dona_rita(pos)
 		"market_stall":
 			draw_market_stall(pos, prop.get("variant", 0))
 		"produce_crate":
@@ -3389,11 +3411,29 @@ func draw_museum_picos(pos: Vector2) -> void:
 		draw_house(pos)
 		return
 	var region: Rect2 = museum_picos_sprite["region"]
-	var draw_w := 410.0
+	var draw_w := 650.0
 	var draw_h := draw_w * (region.size.y / region.size.x)
-	draw_ellipse_shadow(pos + Vector2(96, 174), Vector2(142, 10), 0.11)
-	var target := Rect2(pos + Vector2(-112, -126), Vector2(draw_w, draw_h))
+	draw_ellipse_shadow(pos + Vector2(150, 248), Vector2(220, 13), 0.11)
+	var target := Rect2(pos + Vector2(-180, -190), Vector2(draw_w, draw_h))
 	draw_texture_rect_region(museum_picos_sprite["texture"], target, region)
+
+
+func draw_dona_rita(pos: Vector2) -> void:
+	if dona_rita_texture == null:
+		draw_npc(pos, "feira_picos")
+		return
+	var frame_index := 0
+	if dona_rita_dialog_active and active_dialog and dona_rita_interaction_msec >= 0:
+		var elapsed := float(Time.get_ticks_msec() - dona_rita_interaction_msec) / 1000.0
+		frame_index = int(floor(elapsed * DONA_RITA_FPS)) % DONA_RITA_FRAME_COUNT
+	var frame_col := frame_index % DONA_RITA_COLUMNS
+	var frame_row := floori(float(frame_index) / float(DONA_RITA_COLUMNS))
+	var region := Rect2(Vector2(frame_col, frame_row) * DONA_RITA_FRAME_SIZE, DONA_RITA_FRAME_SIZE)
+	var draw_h := 132.0
+	var draw_w := draw_h * (DONA_RITA_FRAME_SIZE.x / DONA_RITA_FRAME_SIZE.y)
+	draw_ellipse_shadow(pos + Vector2(0, 14), Vector2(18, 4), 0.14)
+	var target := Rect2(pos + Vector2(-draw_w * 0.5, -draw_h + 18.0), Vector2(draw_w, draw_h))
+	draw_texture_rect_region(dona_rita_texture, target, region)
 
 
 func draw_missions() -> void:
