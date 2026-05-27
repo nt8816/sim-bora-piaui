@@ -6,10 +6,16 @@ const WORLD_TOP_TILE := -8
 const WORLD_H := 30
 const PLAYER_SPEED := 150.0
 const OPENING_MISSION_ID := "boas_vindas_picos"
+const OPENING_PHOTO_ID := "memoria_foto_entrada_picos"
+const CHURCH_PHOTO_ID := "memoria_foto_igreja_matriz"
+const FAIR_PHOTO_ID := "memoria_foto_feira_livre"
+const MUSEUM_PHOTO_ID := "memoria_foto_museu_ozildo"
 const PHASE1_ACCEPTED_ID := "fase1_diario_aceita"
 const PHASE1_DONE_ID := "fase1_diario_concluida"
 const PAGE_FEIRA_ID := "pagina_diario_feira"
 const PAGE_MUSEU_ID := "pagina_diario_museu"
+const PAGE_FEIRA_RELEASED_ID := "pagina_diario_feira_liberada"
+const PAGE_MUSEU_RELEASED_ID := "pagina_diario_museu_liberada"
 const CHURCH_DRAW_W := 505.0
 const CHURCH_BASE_OFFSET := Vector2(-198, 71)
 const MENU_IMAGE_SIZE := Vector2(1694, 928)
@@ -54,6 +60,8 @@ var church_picos_texture: Texture2D = preload("res://assets/igreja_picos.png")
 var picos_sign_texture: Texture2D = preload("res://assets/placa_picos.png")
 var asphalt_texture: Texture2D = preload("res://assets/asfalto.png")
 var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
+var opening_market_mototaxi_texture: Texture2D
+var opening_mototaxi_left_texture: Texture2D
 var market_stall_source_texture: Texture2D
 var market_stall_texture: Texture2D
 var feira_adaptada_texture: Texture2D = preload("res://assets/feira_adaptada.png")
@@ -65,7 +73,12 @@ var seu_ze_fan_texture: Texture2D
 var dona_rita_texture: Texture2D = preload("res://assets/dona_rita_sheet.png")
 var ana_texture: Texture2D = preload("res://assets/ana_sheet.png")
 var camera_texture: Texture2D = preload("res://assets/camera.png")
+var bag_icon_texture: Texture2D
+var diary_page_texture: Texture2D
 var memory_polaroid_texture: Texture2D = preload("res://assets/memoria_picos_polaroid.png")
+var church_memory_texture: Texture2D
+var fair_memory_texture: Texture2D
+var museum_memory_texture: Texture2D
 var opening_music_stream: AudioStream = preload("res://assets/audio_abertura_picos.mp3")
 var water_textures := [
 	preload("res://assets/agua_rio_2.jpeg")
@@ -91,6 +104,8 @@ var cactus_sprite := {}
 var museum_picos_sprite := {}
 var church_picos_sprite := {}
 var asphalt_curve_sprite := {}
+var opening_market_mototaxi_sprite := {}
+var opening_mototaxi_left_sprite := {}
 var camera_sprite := {}
 var seu_ze_sprite := {}
 var market_stall_sprites := []
@@ -117,8 +132,14 @@ var opening_time := 0.0
 var opening_player_x := -90.0
 var opening_player_y := 0.0
 var opening_memory_open := false
+var church_memory_open := false
+var fair_memory_open := false
+var museum_memory_open := false
 var opening_ze_ready := false
 var opening_camera_collected := false
+var opening_mototaxi_turned_left := false
+var opening_mototaxi_dialog_active := false
+var opening_mototaxi_dialog_index := 0
 var opening_script_active := false
 var opening_script_index := 0
 var phase1_reward_active := false
@@ -192,6 +213,24 @@ var opening_script_lines := [
 		"text": "Se você trouxer as páginas, eu compartilho os segredos escritos nelas e te dou um item especial para ajudar na jornada pelo Piauí. O que me diz? SIM-BORA?"
 	}
 ]
+var opening_mototaxi_lines := [
+	{
+		"speaker": "Motoboy de Picos",
+		"text": "Eita, chegou cedo! Eu sou o Naldo. Quer uma corrida pela entrada de Picos?"
+	},
+	{
+		"speaker": "Você",
+		"text": "Quero sim. Estou procurando histórias da cidade e disseram que por aqui tudo começa na estrada."
+	},
+	{
+		"speaker": "Motoboy de Picos",
+		"text": "Pois disseram certo. Picos é passagem, encontro e pressa boa. Segura firme que eu te deixo perto da praça."
+	},
+	{
+		"speaker": "Motoboy de Picos",
+		"text": "Quando descer, pega aquela câmera no caminho. Memória boa a gente registra antes que vire poeira."
+	}
+]
 var phase1_reward_lines := [
 	{
 		"speaker": "Seu Zé das Lendas",
@@ -225,6 +264,8 @@ var hint_panel: PanelContainer
 var bag_button: Button
 var collection_panel: PanelContainer
 var collection_list: VBoxContainer
+var collection_preview_panel: PanelContainer
+var collection_preview_image: TextureRect
 var menu_modal: PanelContainer
 var menu_modal_title: Label
 var menu_modal_body: VBoxContainer
@@ -247,8 +288,29 @@ var dona_rita_tile := Vector2i(54, 7)
 var ana_tile := Vector2i(68, 17)
 var dona_rita_dialog_active := false
 var dona_rita_interaction_msec := -1
+var dona_rita_quiz_index := 0
 var ana_dialog_active := false
 var ana_interaction_msec := -1
+var dona_rita_quiz_questions := [
+	{
+		"question": "Qual é o principal produto que faz Picos ser conhecida como capital em todo o Brasil?",
+		"options": ["A - A Cajuína.", "B - A Farinha de Mandioca.", "C - O Mel de Abelha.", "D - Castanha."],
+		"answer": 2,
+		"success": "Isso mesmo! Picos é conhecida como Capital do Mel. Mas Dona Rita ainda quer ver se você entende a força da feira."
+	},
+	{
+		"question": "Na Feira Livre de Picos, o que as barracas ajudam a manter vivo na cidade?",
+		"options": ["A - Apenas a venda de produtos importados.", "B - O encontro entre trabalhadores, famílias, sabores e histórias do cotidiano.", "C - Um espaço fechado só para turistas.", "D - Um lugar usado apenas em datas comemorativas."],
+		"answer": 1,
+		"success": "Muito bem! A feira é lugar de trabalho, conversa e memória. Falta só uma para Dona Rita entregar o papel."
+	},
+	{
+		"question": "Por que o mel é tão importante para a identidade econômica e cultural de Picos?",
+		"options": ["A - Porque representa a produção regional, o trabalho dos apicultores e o reconhecimento da cidade.", "B - Porque chegou pronto de outros estados para ser revendido.", "C - Porque substituiu todos os outros alimentos da feira.", "D - Porque é produzido apenas dentro do museu."],
+		"answer": 0,
+		"success": "Arretado! Você conhece mesmo a nossa terra."
+	}
+]
 
 
 func _ready() -> void:
@@ -271,8 +333,10 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not opening_active:
+		opening_flash = maxf(0.0, opening_flash - delta * 3.2)
 	update_dialog_typewriter(delta)
-	if running and not active_dialog and not collection_panel.visible:
+	if running and not active_dialog and not collection_panel.visible and not church_memory_open and not fair_memory_open and not museum_memory_open:
 		if opening_active:
 			update_opening(delta)
 		else:
@@ -355,6 +419,68 @@ func load_png_texture(path: String) -> Texture2D:
 	if image.load(path) != OK:
 		return null
 	return ImageTexture.create_from_image(image)
+
+
+func load_dark_background_png_texture(path: String) -> Texture2D:
+	var image := Image.new()
+	if image.load(path) != OK:
+		return null
+	image.convert(Image.FORMAT_RGBA8)
+	erase_flooded_dark_background(image)
+	return ImageTexture.create_from_image(image)
+
+
+func load_light_background_png_texture(path: String) -> Texture2D:
+	var image := Image.new()
+	if image.load(path) != OK:
+		return null
+	image.convert(Image.FORMAT_RGBA8)
+	erase_flooded_light_background(image)
+	return ImageTexture.create_from_image(image)
+
+
+func load_clean_icon_texture(path: String) -> Texture2D:
+	var image := Image.new()
+	if image.load(path) != OK:
+		return null
+	image.convert(Image.FORMAT_RGBA8)
+	erase_soft_light_background(image)
+	return crop_visible_texture(image)
+
+
+func erase_soft_light_background(image: Image) -> void:
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			var color := image.get_pixel(x, y)
+			var max_channel := maxf(color.r, maxf(color.g, color.b))
+			var min_channel := minf(color.r, minf(color.g, color.b))
+			var low_saturation := max_channel - min_channel < 0.16
+			if max_channel > 0.78 and low_saturation:
+				color.a = 0.0
+				image.set_pixel(x, y, color)
+
+
+func crop_visible_texture(image: Image) -> Texture2D:
+	var min_x := image.get_width()
+	var min_y := image.get_height()
+	var max_x := 0
+	var max_y := 0
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			if image.get_pixel(x, y).a > 0.03:
+				min_x = mini(min_x, x)
+				min_y = mini(min_y, y)
+				max_x = maxi(max_x, x)
+				max_y = maxi(max_y, y)
+	if max_x < min_x or max_y < min_y:
+		return ImageTexture.create_from_image(image)
+	var pad := 8
+	var sx := maxi(0, min_x - pad)
+	var sy := maxi(0, min_y - pad)
+	var sw := mini(image.get_width() - sx, max_x - min_x + pad * 2)
+	var sh := mini(image.get_height() - sy, max_y - min_y + pad * 2)
+	var cropped := image.get_region(Rect2i(Vector2i(sx, sy), Vector2i(sw, sh)))
+	return ImageTexture.create_from_image(cropped)
 
 
 func load_character_sheet(character_id: String) -> void:
@@ -527,7 +653,16 @@ func load_special_sprites() -> void:
 	if not church_picos_sprite.is_empty():
 		church_collision_image = church_picos_sprite["texture"].get_image()
 	asphalt_curve_sprite = make_clean_sprite(asphalt_curve_texture, true)
+	opening_market_mototaxi_texture = load_png_texture("res://assets/opening_market_mototaxi.png")
+	opening_mototaxi_left_texture = load_png_texture("res://assets/opening_mototaxi_left.png")
+	opening_market_mototaxi_sprite = make_mototaxi_sprite(opening_market_mototaxi_texture)
+	opening_mototaxi_left_sprite = make_mototaxi_sprite(opening_mototaxi_left_texture)
 	camera_sprite = make_clean_sprite(camera_texture, true)
+	bag_icon_texture = load_clean_icon_texture("res://assets/icone_mochila.png")
+	diary_page_texture = load_dark_background_png_texture("res://assets/papel_elemento.png")
+	church_memory_texture = load_light_background_png_texture("res://assets/memoria_igreja_matriz.png")
+	fair_memory_texture = load_light_background_png_texture("res://assets/memoria_feira_livre.png")
+	museum_memory_texture = load_light_background_png_texture("res://assets/memoria_museu_ozildo.png")
 	seu_ze_fan_texture = load_png_texture("res://assets/seu_ze_abanando_120.png")
 	seu_ze_sprite = make_clean_sprite(seu_ze_texture, true)
 	water_sprites.clear()
@@ -833,6 +968,17 @@ func crop_visible_image(image: Image) -> Dictionary:
 	}
 
 
+func make_mototaxi_sprite(texture: Texture2D) -> Dictionary:
+	if texture == null:
+		return {}
+	var image := texture.get_image()
+	if image == null:
+		return {}
+	image.convert(Image.FORMAT_RGBA8)
+	erase_flooded_dark_background(image)
+	return crop_visible_image(image)
+
+
 func make_clean_sprite(texture: Texture2D, erase_white_background: bool) -> Dictionary:
 	var image := texture.get_image()
 	if image == null:
@@ -1091,9 +1237,9 @@ func add_phase1_diary_pages() -> void:
 		"npc": "Diário das Raízes",
 		"item": "Página da Feira Livre",
 		"fact": "A Feira Livre de Picos guarda encontros, trabalho e sabores que ajudam a contar a economia e a vida cotidiana da cidade.",
-		"tile": picos_district_tile + Vector2i(13, 7),
+		"tile": dona_rita_tile + Vector2i(1, 1),
 		"type": "diary_page",
-		"requires": "__dona_rita_entrega__"
+		"requires": PAGE_FEIRA_RELEASED_ID
 	})
 	missions.append({
 		"id": PAGE_MUSEU_ID,
@@ -1101,9 +1247,9 @@ func add_phase1_diary_pages() -> void:
 		"npc": "Diário das Raízes",
 		"item": "Página do Museu",
 		"fact": "O Museu Ozildo Albano preserva memórias, objetos e registros que ajudam a cidade a reconhecer sua própria história.",
-		"tile": ozildo_museum_tile + Vector2i(1, 4),
+		"tile": ana_tile + Vector2i(1, 1),
 		"type": "diary_page",
-		"requires": "__ana_museu_entrega__"
+		"requires": PAGE_MUSEU_RELEASED_ID
 	})
 
 
@@ -1134,6 +1280,9 @@ func setup_opening_spawn() -> void:
 	opening_memory_open = false
 	opening_ze_ready = false
 	opening_camera_collected = false
+	opening_mototaxi_turned_left = false
+	opening_mototaxi_dialog_active = false
+	opening_mototaxi_dialog_index = 0
 	opening_script_active = false
 	opening_script_index = 0
 	phase1_reward_active = false
@@ -1161,8 +1310,24 @@ func get_opening_camera_pos() -> Vector2:
 	return get_opening_spawn_pos() + Vector2(138, -8)
 
 
+func get_opening_mototaxi_pos() -> Vector2:
+	return get_opening_spawn_pos() + Vector2(290, 18)
+
+
 func get_seu_ze_pos() -> Vector2:
 	return Vector2(picos_church_tile) * TILE + Vector2(140, 132)
+
+
+func get_church_photo_camera_pos() -> Vector2:
+	return Vector2(picos_church_tile) * TILE + Vector2(54, 236)
+
+
+func get_fair_photo_camera_pos() -> Vector2:
+	return get_dona_rita_pos() + Vector2(-92, 74)
+
+
+func get_museum_photo_camera_pos() -> Vector2:
+	return get_ana_museu_pos() + Vector2(-84, 70)
 
 
 func update_opening(delta: float) -> void:
@@ -1175,10 +1340,10 @@ func update_opening(delta: float) -> void:
 		player_dir = "right"
 		walk_time = 0.0
 		if opening_time >= 1.25:
-			opening_phase = "photo"
+			opening_phase = "mototaxi"
 			opening_time = 0.0
-			opening_hint = "Pegue a câmera no caminho para registrar sua primeira memória."
-	elif opening_phase in ["photo", "walk", "meet"]:
+			opening_hint = "Fale com o motoboy para chegar ao começo da jornada."
+	elif opening_phase in ["mototaxi", "photo", "walk", "meet"]:
 		var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		move += touch_vector
 		if touch_buttons.get("left", false):
@@ -1202,7 +1367,10 @@ func update_opening(delta: float) -> void:
 		else:
 			walk_time = 0.0
 
-		if opening_phase == "photo":
+		if opening_phase == "mototaxi":
+			var near_mototaxi := player_pos.distance_to(get_opening_mototaxi_pos()) < 88.0
+			opening_hint = "Aperte F para falar com o motoboy." if near_mototaxi else "Chegue perto do motoboy."
+		elif opening_phase == "photo":
 			var near_camera := player_pos.distance_to(get_opening_camera_pos()) < 58.0
 			opening_hint = "Aperte F para pegar a câmera." if near_camera else "Pegue a câmera no caminho."
 		else:
@@ -1236,6 +1404,12 @@ func interact_opening() -> void:
 		return
 	if opening_memory_open:
 		return
+	if opening_phase == "mototaxi":
+		if player_pos.distance_to(get_opening_mototaxi_pos()) < 88.0:
+			start_mototaxi_dialog()
+		else:
+			opening_hint = "Chegue mais perto do motoboy para conversar."
+		return
 	if opening_phase == "photo":
 		if player_pos.distance_to(get_opening_camera_pos()) < 58.0:
 			collect_opening_camera()
@@ -1244,6 +1418,42 @@ func interact_opening() -> void:
 		return
 	if opening_phase == "meet" and opening_ze_ready:
 		start_opening_script()
+
+
+func start_mototaxi_dialog() -> void:
+	opening_mototaxi_dialog_active = true
+	opening_mototaxi_dialog_index = 0
+	opening_mototaxi_turned_left = false
+	player_dir = "right"
+	show_mototaxi_dialog_line()
+
+
+func show_mototaxi_dialog_line() -> void:
+	if opening_mototaxi_dialog_index >= opening_mototaxi_lines.size():
+		finish_mototaxi_dialog()
+		return
+	var line: Dictionary = opening_mototaxi_lines[opening_mototaxi_dialog_index]
+	open_dialog(String(line["speaker"]), String(line["text"]))
+
+
+func advance_mototaxi_dialog() -> void:
+	if not dialog_typewriter_done:
+		dialog_typewriter_done = true
+		dialog_text.visible_characters = -1
+		answer_box.visible = true
+		return
+	opening_mototaxi_dialog_index += 1
+	show_mototaxi_dialog_line()
+
+
+func finish_mototaxi_dialog() -> void:
+	opening_mototaxi_dialog_active = false
+	opening_mototaxi_turned_left = true
+	player_dir = "right"
+	close_dialog()
+	opening_phase = "photo"
+	opening_time = 0.0
+	opening_hint = "Pegue a câmera no caminho para registrar sua primeira memória."
 
 
 func collect_opening_camera() -> void:
@@ -1255,6 +1465,8 @@ func take_opening_photo() -> void:
 	opening_memory_open = true
 	opening_flash = 1.0
 	opening_hint = "Nova Memória adicionada ao Diário de Bordo!"
+	learned[OPENING_PHOTO_ID] = true
+	save_progress()
 	play_camera_sound()
 	update_touch_controls_visibility()
 	update_memory_continue_button()
@@ -1471,10 +1683,10 @@ func show_ana_quiz() -> void:
 
 func answer_ana_quiz(index: int) -> void:
 	if index == 1:
-		learned[PAGE_MUSEU_ID] = true
+		learned[PAGE_MUSEU_RELEASED_ID] = true
 		save_progress()
 		update_hud()
-		show_dialog("Ana", "Exatamente! O professor Ozildo era tão apaixonado pela nossa história que começou o museu na própria casa, chamando de Museu-Biblioteca Capitão-mor João Gomes Caminha. Ele atendia pessoalmente estudantes e pesquisadores! Você provou ter o mesmo espírito curioso dele. Aqui está a página do Seu Zé. Parabéns!\n\nPágina do Museu adicionada à mochila.", [])
+		show_dialog("Ana", "Exatamente! O professor Ozildo era tão apaixonado pela nossa história que começou o museu na própria casa, chamando de Museu-Biblioteca Capitão-mor João Gomes Caminha. Ele atendia pessoalmente estudantes e pesquisadores! Você provou ter o mesmo espírito curioso dele. A página caiu ali pertinho: pegue-a para guardar na mochila.", [])
 		return
 	show_dialog("Ana", "Ainda não foi dessa vez. Observe melhor a história do museu e tente responder novamente.", [])
 
@@ -1508,31 +1720,129 @@ func show_dona_rita_paper_clue() -> void:
 	var start_quiz := make_button("Responder")
 	start_quiz.pressed.connect(show_dona_rita_quiz)
 	answer_box.add_child(start_quiz)
-	open_dialog("Dona Rita", "Ah, aquele papel amarelo que veio voando agorinha? Caiu bem ali no meio dos sacos de castanha. Mas olha, eu só te entrego se você me provar que conhece a nossa terra.\n\nResponda rápido: Qual é o principal produto que faz Picos ser conhecida como capital em todo o Brasil?")
+	open_dialog("Dona Rita", "Ah, aquele papel amarelo que veio voando agorinha? Caiu bem ali no meio dos sacos de castanha. Mas olha, eu só te entrego se você me provar que conhece a nossa terra.\n\nSão três perguntinhas sobre Picos, a feira e o nosso mel. Preparado?")
 
 
 func show_dona_rita_quiz() -> void:
+	dona_rita_quiz_index = 0
+	show_dona_rita_quiz_question()
+
+
+func show_dona_rita_quiz_question() -> void:
 	clear_answers()
-	var options := ["A - A Cajuína.", "B - A Farinha de Mandioca.", "C - O Mel de Abelha.", "D - Castanha."]
+	var quiz: Dictionary = dona_rita_quiz_questions[dona_rita_quiz_index]
+	var options: Array = quiz["options"]
 	for i in range(options.size()):
+		var option_index := i
 		var button := make_button(options[i])
-		button.pressed.connect(func(): answer_dona_rita_quiz(i))
+		button.pressed.connect(func(): answer_dona_rita_quiz(option_index))
 		answer_box.add_child(button)
-	open_dialog("Dona Rita", "Qual é o principal produto que faz Picos ser conhecida como capital em todo o Brasil?")
+	open_dialog("Dona Rita", "Pergunta %d de %d\n\n%s" % [dona_rita_quiz_index + 1, dona_rita_quiz_questions.size(), quiz["question"]])
 
 
 func answer_dona_rita_quiz(index: int) -> void:
-	if index == 2:
-		learned[PAGE_FEIRA_ID] = true
-		save_progress()
-		update_hud()
-		show_dialog("Dona Rita", "Arretado! O nosso mel é o melhor que tem, orgulho da nossa região. Pode pegar o seu papel ali, e vá com Deus na sua missão!\n\nPágina da Feira Livre adicionada à mochila.", [])
+	var quiz: Dictionary = dona_rita_quiz_questions[dona_rita_quiz_index]
+	if index == int(quiz["answer"]):
+		if dona_rita_quiz_index >= dona_rita_quiz_questions.size() - 1:
+			complete_dona_rita_quiz()
+			return
+		dona_rita_quiz_index += 1
+		clear_answers()
+		var next_question := make_button("Próxima pergunta")
+		next_question.pressed.connect(show_dona_rita_quiz_question)
+		answer_box.add_child(next_question)
+		open_dialog("Dona Rita", String(quiz["success"]))
 		return
-	show_dialog("Dona Rita", "Ainda não foi dessa vez. Pense no produto doce que também conta a força da nossa região e tente de novo.", [])
+	clear_answers()
+	var retry := make_button("Tentar novamente")
+	retry.pressed.connect(show_dona_rita_quiz_question)
+	answer_box.add_child(retry)
+	open_dialog("Dona Rita", "Ainda não foi dessa vez. Pense com calma no que Dona Rita contou sobre a feira e tente de novo.")
+
+
+func complete_dona_rita_quiz() -> void:
+	learned[PAGE_FEIRA_RELEASED_ID] = true
+	save_progress()
+	update_hud()
+	show_dialog("Dona Rita", "Arretado! O nosso mel é orgulho da nossa região, e a feira guarda muita história do povo de Picos. O papel está ali pertinho dos sacos de castanha: pegue-o para guardar na mochila, e vá com Deus na sua missão!", [])
 
 
 func is_dona_rita_speaking() -> bool:
 	return dona_rita_dialog_active and active_dialog and dona_rita_interaction_msec >= 0
+
+
+func can_collect_church_photo_camera() -> bool:
+	return not opening_active and not learned.has(CHURCH_PHOTO_ID) and player_pos.distance_to(get_church_photo_camera_pos()) < 70.0
+
+
+func take_church_photo() -> void:
+	church_memory_open = true
+	opening_flash = 1.0
+	learned[CHURCH_PHOTO_ID] = true
+	save_progress()
+	play_camera_sound()
+	update_touch_controls_visibility()
+	update_memory_continue_button()
+
+
+func can_collect_fair_photo_camera() -> bool:
+	return not opening_active and not learned.has(FAIR_PHOTO_ID) and player_pos.distance_to(get_fair_photo_camera_pos()) < 70.0
+
+
+func take_fair_photo() -> void:
+	fair_memory_open = true
+	opening_flash = 1.0
+	learned[FAIR_PHOTO_ID] = true
+	save_progress()
+	play_camera_sound()
+	update_touch_controls_visibility()
+	update_memory_continue_button()
+
+
+func can_collect_museum_photo_camera() -> bool:
+	return not opening_active and not learned.has(MUSEUM_PHOTO_ID) and player_pos.distance_to(get_museum_photo_camera_pos()) < 70.0
+
+
+func take_museum_photo() -> void:
+	museum_memory_open = true
+	opening_flash = 1.0
+	learned[MUSEUM_PHOTO_ID] = true
+	save_progress()
+	play_camera_sound()
+	update_touch_controls_visibility()
+	update_memory_continue_button()
+
+
+func close_current_memory_card() -> void:
+	if opening_memory_open:
+		close_opening_memory()
+		return
+	if church_memory_open:
+		close_church_memory()
+		return
+	if fair_memory_open:
+		close_fair_memory()
+		return
+	if museum_memory_open:
+		close_museum_memory()
+
+
+func close_church_memory() -> void:
+	church_memory_open = false
+	update_touch_controls_visibility()
+	update_memory_continue_button()
+
+
+func close_fair_memory() -> void:
+	fair_memory_open = false
+	update_touch_controls_visibility()
+	update_memory_continue_button()
+
+
+func close_museum_memory() -> void:
+	museum_memory_open = false
+	update_touch_controls_visibility()
+	update_memory_continue_button()
 
 
 func near_seu_ze() -> bool:
@@ -1548,6 +1858,28 @@ func interact() -> void:
 	if active_dialog:
 		advance_or_close_dialog()
 		return
+	if church_memory_open:
+		close_church_memory()
+		return
+	if fair_memory_open:
+		close_fair_memory()
+		return
+	if museum_memory_open:
+		close_museum_memory()
+		return
+	if can_collect_church_photo_camera():
+		take_church_photo()
+		return
+	if can_collect_fair_photo_camera():
+		take_fair_photo()
+		return
+	if can_collect_museum_photo_camera():
+		take_museum_photo()
+		return
+	var mission: Variant = nearest_mission()
+	if mission != null and String(mission.get("type", "")) == "diary_page" and not learned.has(mission["id"]):
+		collect_diary_page(mission)
+		return
 	if near_seu_ze():
 		interact_seu_ze_phase1()
 		return
@@ -1557,8 +1889,6 @@ func interact() -> void:
 	if near_ana_museu():
 		interact_ana_museu()
 		return
-
-	var mission: Variant = nearest_mission()
 	if mission == null:
 		show_dialog("Picos", "Explore a cidade livremente.", [])
 		return
@@ -1730,58 +2060,85 @@ func configure_dialog_layout(text: String) -> void:
 		if child is Button:
 			option_count += 1
 			longest_option = maxi(longest_option, String(child.text).length())
+
+	var viewport := get_viewport_rect().size
 	var text_len := text.length()
-	var top := 0.58
-	var text_height := 96.0
-	var options_height := 60.0
+	var width_ratio := 0.58
+	var chars_per_line := 44.0
 	var button_font := 13
-	var button_base := 36.0
-	if option_count >= 4 and longest_option > 110:
-		top = 0.08
-		text_height = 74.0
-		options_height = 380.0
+	var button_base := 34.0
+	if option_count >= 4 and longest_option > 100:
+		width_ratio = 0.82
+		chars_per_line = 70.0
 		button_font = 11
-		button_base = 82.0
+		button_base = 58.0
 	elif option_count >= 4:
-		top = 0.26
-		text_height = 74.0
-		options_height = 255.0
-		button_font = 13
-		button_base = 44.0
-	elif option_count >= 2 and longest_option > 72:
-		top = 0.34
-		text_height = 96.0
-		options_height = 210.0
-		button_font = 12
-		button_base = 66.0
+		width_ratio = 0.72
+		chars_per_line = 58.0
+		button_base = 34.0
 	elif option_count >= 2:
-		top = 0.44
-		text_height = 100.0
-		options_height = 150.0
-		button_font = 13
-		button_base = 46.0
-	elif text_len > 210:
-		top = 0.32
-		text_height = 190.0
-		options_height = 54.0
-	elif text_len > 110:
-		top = 0.48
-		text_height = 130.0
-		options_height = 50.0
-	dialog_panel.anchor_top = top
+		width_ratio = 0.70
+		chars_per_line = 54.0
+		button_font = 12 if longest_option > 72 else 13
+		button_base = 48.0 if longest_option > 72 else 36.0
+	elif text_len > 190:
+		width_ratio = 0.70
+		chars_per_line = 56.0
+	elif text_len < 90:
+		width_ratio = 0.46
+		chars_per_line = 34.0
+
+	var explicit_lines := text.count("\n") + 1
+	var estimated_lines := maxi(explicit_lines, ceili(float(text_len) / chars_per_line))
+	var text_height := clampf(estimated_lines * 20.0 + 8.0, 38.0, viewport.y * 0.22)
+	var options_height := 0.0
+	if option_count > 0:
+		options_height = option_count * button_base + maxi(0, option_count - 1) * 6.0
+		options_height = minf(options_height, viewport.y * 0.36)
+
+	var panel_width := clampf(viewport.x * width_ratio, 340.0, viewport.x - 36.0)
+	var panel_height := 10.0 + 26.0 + 6.0 + text_height + (7.0 if option_count > 0 else 0.0) + options_height + 10.0
+	panel_height = clampf(panel_height, 104.0, viewport.y * 0.52)
+	dialog_panel.anchor_left = 0.0
+	dialog_panel.anchor_right = 0.0
+	dialog_panel.anchor_top = 0.0
+	dialog_panel.anchor_bottom = 0.0
+	dialog_panel.position = Vector2((viewport.x - panel_width) * 0.5, viewport.y - panel_height - 16.0)
+	dialog_panel.size = Vector2(panel_width, panel_height)
+	dialog_panel.custom_minimum_size = Vector2.ZERO
+	dialog_panel.offset_left = dialog_panel.position.x
+	dialog_panel.offset_top = dialog_panel.position.y
+	dialog_panel.offset_right = dialog_panel.position.x + panel_width
+	dialog_panel.offset_bottom = dialog_panel.position.y + panel_height
+	dialog_panel.add_theme_stylebox_override("panel", get_dialog_panel_style(String(dialog_title.text), option_count))
+
 	dialog_text.custom_minimum_size = Vector2(0, text_height)
 	answer_scroll.custom_minimum_size = Vector2(0, options_height)
+	answer_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	for child in answer_box.get_children():
 		if child is Button:
 			var button := child as Button
 			var extra := 0.0
 			var length := String(button.text).length()
 			if length > 155:
-				extra = 18.0
+				extra = 12.0
 			elif length > 95:
-				extra = 10.0
+				extra = 6.0
 			button.custom_minimum_size = Vector2(0, button_base + extra)
 			button.add_theme_font_size_override("font_size", button_font)
+			apply_dialog_button_style(button)
+
+
+func get_dialog_panel_style(title: String, option_count: int) -> StyleBoxFlat:
+	if title.begins_with("Dona Rita"):
+		return make_panel_style(Color(0.31, 0.16, 0.08, 0.94), Color("#ffc247"))
+	if title.begins_with("Ana"):
+		return make_panel_style(Color(0.10, 0.21, 0.22, 0.94), Color("#9ee6d2"))
+	if title.begins_with("Jogador"):
+		return make_panel_style(Color(0.12, 0.16, 0.24, 0.92), Color("#8fd0ff"))
+	if option_count >= 4:
+		return make_panel_style(Color(0.18, 0.12, 0.08, 0.96), Color("#f1c96c"))
+	return make_panel_style(Color(0.18, 0.10, 0.055, 0.94), Color("#ffc247"))
 
 
 func update_dialog_typewriter(delta: float) -> void:
@@ -1811,6 +2168,9 @@ func close_dialog() -> void:
 
 
 func advance_or_close_dialog() -> void:
+	if opening_mototaxi_dialog_active:
+		advance_mototaxi_dialog()
+		return
 	if opening_script_active:
 		advance_opening_script()
 		return
@@ -1828,8 +2188,11 @@ func advance_or_close_dialog() -> void:
 func toggle_collection() -> void:
 	render_collection()
 	collection_panel.visible = not collection_panel.visible
+	if collection_preview_panel:
+		collection_preview_panel.visible = false
 	if bag_button:
-		bag_button.text = "Fechar" if collection_panel.visible else "Mochila"
+		bag_button.button_pressed = collection_panel.visible
+		bag_button.visible = not collection_panel.visible
 	update_touch_controls_visibility()
 
 
@@ -1891,17 +2254,18 @@ func apply_settings() -> void:
 func update_touch_controls_visibility() -> void:
 	if not touch_ui:
 		return
-	touch_ui.visible = bool(settings["touch_controls"]) and running and not active_dialog and not opening_memory_open and not collection_panel.visible
+	touch_ui.visible = bool(settings["touch_controls"]) and running and not active_dialog and not opening_memory_open and not church_memory_open and not fair_memory_open and not museum_memory_open and not collection_panel.visible
 	if not touch_ui.visible:
 		touch_vector = Vector2.ZERO
 		touch_buttons.clear()
 
 
 func update_memory_continue_button() -> void:
+	var memory_open := opening_memory_open or church_memory_open or fair_memory_open or museum_memory_open
 	if memory_continue_button:
-		memory_continue_button.visible = opening_memory_open
+		memory_continue_button.visible = memory_open
 	if bag_button:
-		bag_button.visible = not opening_memory_open
+		bag_button.visible = not memory_open and (not collection_panel or not collection_panel.visible)
 
 
 func update_hud() -> void:
@@ -1926,22 +2290,67 @@ func render_collection() -> void:
 		return
 	for child in collection_list.get_children():
 		child.queue_free()
-	var opening_label := Label.new()
-	opening_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	if learned.has(OPENING_MISSION_ID):
-		opening_label.text = "%s\n%s" % [opening_mission["item"], opening_mission["fact"]]
-	else:
-		opening_label.text = "Item oculto\nExplore %s para desbloquear." % opening_mission["name"]
-	collection_list.add_child(opening_label)
-	for mission in missions:
-		var label := Label.new()
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		if learned.has(mission["id"]):
-			label.text = "%s\n%s" % [mission["item"], mission["fact"]]
-		else:
-			label.text = "Item oculto\nExplore %s para desbloquear." % mission["name"]
-		collection_list.add_child(label)
 
+	add_photo_memories_to_collection()
+
+
+func add_photo_memories_to_collection() -> void:
+	var memories := [
+		{"id": OPENING_PHOTO_ID, "title": "Primeira Memória", "texture": memory_polaroid_texture},
+		{"id": CHURCH_PHOTO_ID, "title": "Igreja Matriz", "texture": church_memory_texture},
+		{"id": FAIR_PHOTO_ID, "title": "Feira Livre", "texture": fair_memory_texture},
+		{"id": MUSEUM_PHOTO_ID, "title": "Museu Ozildo Albano", "texture": museum_memory_texture}
+	]
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 18)
+	grid.add_theme_constant_override("v_separation", 18)
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	collection_list.add_child(grid)
+	for memory in memories:
+		if learned.has(memory["id"]):
+			grid.add_child(make_memory_thumbnail(String(memory["title"]), memory["texture"]))
+
+
+func make_memory_thumbnail(title: String, texture: Texture2D) -> Control:
+	var pocket := PanelContainer.new()
+	pocket.tooltip_text = title
+	pocket.custom_minimum_size = Vector2(330, 202)
+	pocket.mouse_filter = Control.MOUSE_FILTER_STOP
+	pocket.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	pocket.gui_input.connect(func(event):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			open_collection_memory_preview(texture)
+	)
+	pocket.add_theme_stylebox_override("panel", make_bag_pocket_style())
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	pocket.add_child(margin)
+
+	var preview := TextureRect.new()
+	preview.texture = texture
+	preview.custom_minimum_size = Vector2(306, 182)
+	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	margin.add_child(preview)
+	return pocket
+
+
+func open_collection_memory_preview(texture: Texture2D) -> void:
+	if texture == null or not collection_preview_panel or not collection_preview_image:
+		return
+	collection_preview_image.texture = texture
+	collection_preview_panel.visible = true
+	collection_preview_panel.move_to_front()
+
+
+func close_collection_memory_preview() -> void:
+	if collection_preview_panel:
+		collection_preview_panel.visible = false
 
 func build_ui() -> void:
 	hud_layer = CanvasLayer.new()
@@ -1977,13 +2386,23 @@ func build_ui() -> void:
 	hint_panel.offset_bottom = -36
 	hud_layer.add_child(hint_panel)
 
-	bag_button = make_button("Mochila")
+	bag_button = make_button("")
+	bag_button.toggle_mode = true
+	bag_button.icon = bag_icon_texture
+	bag_button.expand_icon = true
+	bag_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bag_button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	bag_button.tooltip_text = "Mochila"
+	bag_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	bag_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bag_button.disabled = false
 	bag_button.anchor_left = 1
 	bag_button.anchor_right = 1
-	bag_button.offset_left = -148
-	bag_button.offset_top = 58
-	bag_button.offset_right = -10
-	bag_button.offset_bottom = 104
+	bag_button.offset_left = -104
+	bag_button.offset_top = 54
+	bag_button.offset_right = -16
+	bag_button.offset_bottom = 142
+	bag_button.custom_minimum_size = Vector2(88, 88)
 	apply_gold_button_style(bag_button, 15)
 	bag_button.pressed.connect(toggle_collection)
 	hud_layer.add_child(bag_button)
@@ -1994,6 +2413,8 @@ func build_ui() -> void:
 	build_memory_continue_ui()
 	build_start_ui()
 	build_menu_modal()
+	if bag_button:
+		bag_button.move_to_front()
 
 
 func build_start_ui() -> void:
@@ -2206,7 +2627,7 @@ func build_menu_modal() -> void:
 	menu_modal.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", 6)
 	margin.add_child(box)
 
 	var header := HBoxContainer.new()
@@ -2497,24 +2918,24 @@ func build_dialog_ui() -> void:
 	hud_layer.add_child(dialog_panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 14)
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	dialog_panel.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", 6)
 	margin.add_child(box)
 
-	dialog_title = make_label("", 18)
+	dialog_title = make_label("", 17)
 	dialog_title.add_theme_font_override("font", typewriter_font)
 	dialog_title.add_theme_color_override("font_color", Color(1, 0.78, 0.28))
 	box.add_child(dialog_title)
 
-	dialog_text = make_label("", 16)
+	dialog_text = make_label("", 15)
 	dialog_text.add_theme_font_override("font", typewriter_font)
-	dialog_text.add_theme_constant_override("line_spacing", 4)
+	dialog_text.add_theme_constant_override("line_spacing", 2)
 	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD
 	dialog_text.custom_minimum_size = Vector2(0, 82)
 	dialog_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -2524,13 +2945,13 @@ func build_dialog_ui() -> void:
 	answer_scroll = ScrollContainer.new()
 	answer_scroll.custom_minimum_size = Vector2(0, 250)
 	answer_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	answer_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	answer_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	box.add_child(answer_scroll)
 
 	answer_box = VBoxContainer.new()
 	answer_box.custom_minimum_size = Vector2(0, 0)
 	answer_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	answer_box.add_theme_constant_override("separation", 5)
+	answer_box.add_theme_constant_override("separation", 6)
 	answer_scroll.add_child(answer_box)
 
 
@@ -2547,46 +2968,120 @@ func build_collection_ui() -> void:
 	collection_panel.anchor_top = 0.5
 	collection_panel.anchor_right = 0.5
 	collection_panel.anchor_bottom = 0.5
-	collection_panel.offset_left = -360
-	collection_panel.offset_top = -220
-	collection_panel.offset_right = 360
-	collection_panel.offset_bottom = 220
+	collection_panel.offset_left = -390
+	collection_panel.offset_top = -250
+	collection_panel.offset_right = 390
+	collection_panel.offset_bottom = 250
+	collection_panel.add_theme_stylebox_override("panel", make_bag_inner_style())
 	hud_layer.add_child(collection_panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_left", 24)
 	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_right", 18)
-	margin.add_theme_constant_override("margin_bottom", 18)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
 	collection_panel.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
+	box.add_theme_constant_override("separation", 12)
 	margin.add_child(box)
 
 	var row := HBoxContainer.new()
 	box.add_child(row)
-	row.add_child(make_label("Coleção Cultural", 24))
 	row.add_spacer(false)
-	var close := make_button("Fechar")
+	var close := make_button("x")
+	close.custom_minimum_size = Vector2(34, 30)
+	close.size_flags_horizontal = Control.SIZE_SHRINK_END
+	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close.tooltip_text = ""
+	close.add_theme_font_size_override("font_size", 14)
+	close.add_theme_stylebox_override("normal", make_panel_style(Color(0.11, 0.055, 0.03, 0.88), Color("#c5823e")))
+	close.add_theme_stylebox_override("hover", make_panel_style(Color(0.18, 0.09, 0.045, 0.95), Color("#f0b25a")))
+	close.add_theme_stylebox_override("pressed", make_panel_style(Color(0.07, 0.035, 0.02, 0.95), Color("#8b4b20")))
 	close.pressed.connect(toggle_collection)
 	row.add_child(close)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(640, 330)
+	scroll.custom_minimum_size = Vector2(704, 386)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
 	collection_list = VBoxContainer.new()
 	collection_list.add_theme_constant_override("separation", 12)
+	collection_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(collection_list)
+
+	build_collection_preview_ui()
+
+
+func build_collection_preview_ui() -> void:
+	collection_preview_panel = PanelContainer.new()
+	collection_preview_panel.visible = false
+	collection_preview_panel.anchor_left = 0.5
+	collection_preview_panel.anchor_top = 0.5
+	collection_preview_panel.anchor_right = 0.5
+	collection_preview_panel.anchor_bottom = 0.5
+	collection_preview_panel.offset_left = -430
+	collection_preview_panel.offset_top = -270
+	collection_preview_panel.offset_right = 430
+	collection_preview_panel.offset_bottom = 270
+	collection_preview_panel.add_theme_stylebox_override("panel", make_bag_inner_style())
+	hud_layer.add_child(collection_preview_panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_bottom", 24)
+	collection_preview_panel.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	margin.add_child(box)
+
+	var row := HBoxContainer.new()
+	box.add_child(row)
+	row.add_spacer(false)
+	var close := make_button("x")
+	close.custom_minimum_size = Vector2(34, 30)
+	close.size_flags_horizontal = Control.SIZE_SHRINK_END
+	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close.tooltip_text = ""
+	close.add_theme_font_size_override("font_size", 14)
+	close.add_theme_stylebox_override("normal", make_panel_style(Color(0.11, 0.055, 0.03, 0.88), Color("#c5823e")))
+	close.add_theme_stylebox_override("hover", make_panel_style(Color(0.18, 0.09, 0.045, 0.95), Color("#f0b25a")))
+	close.add_theme_stylebox_override("pressed", make_panel_style(Color(0.07, 0.035, 0.02, 0.95), Color("#8b4b20")))
+	close.pressed.connect(close_collection_memory_preview)
+	row.add_child(close)
+
+	var pocket := PanelContainer.new()
+	pocket.add_theme_stylebox_override("panel", make_bag_pocket_style())
+	pocket.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pocket.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(pocket)
+
+	var image_margin := MarginContainer.new()
+	image_margin.add_theme_constant_override("margin_left", 14)
+	image_margin.add_theme_constant_override("margin_top", 12)
+	image_margin.add_theme_constant_override("margin_right", 14)
+	image_margin.add_theme_constant_override("margin_bottom", 12)
+	pocket.add_child(image_margin)
+
+	collection_preview_image = TextureRect.new()
+	collection_preview_image.custom_minimum_size = Vector2(780, 440)
+	collection_preview_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	collection_preview_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image_margin.add_child(collection_preview_image)
 
 
 func build_touch_ui() -> void:
 	touch_ui = Control.new()
 	touch_ui.anchor_right = 1
 	touch_ui.anchor_bottom = 1
+	touch_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(touch_ui)
 
 	var dpad := GridContainer.new()
+	dpad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dpad.columns = 3
 	dpad.anchor_top = 1
 	dpad.anchor_bottom = 1
@@ -2609,6 +3104,7 @@ func build_touch_ui() -> void:
 	add_pad_space(dpad)
 
 	var action := make_button("F")
+	action.mouse_filter = Control.MOUSE_FILTER_STOP
 	action.anchor_left = 1
 	action.anchor_top = 1
 	action.anchor_right = 1
@@ -2634,7 +3130,7 @@ func build_memory_continue_ui() -> void:
 	memory_continue_button.offset_right = -28
 	memory_continue_button.offset_bottom = -24
 	apply_gold_button_style(memory_continue_button, 18)
-	memory_continue_button.pressed.connect(close_opening_memory)
+	memory_continue_button.pressed.connect(close_current_memory_card)
 	hud_layer.add_child(memory_continue_button)
 
 
@@ -2667,13 +3163,13 @@ func make_button(text: String) -> Button:
 	button.focus_mode = Control.FOCUS_NONE
 	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-	var button_height := 34.0
+	var button_height := 30.0
 	if text.length() > 150:
-		button_height = 64.0
-	elif text.length() > 95:
 		button_height = 54.0
+	elif text.length() > 95:
+		button_height = 46.0
 	elif text.length() > 42:
-		button_height = 44.0
+		button_height = 36.0
 	button.custom_minimum_size = Vector2(0, button_height)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.add_theme_font_size_override("font_size", 13)
@@ -2688,6 +3184,15 @@ func apply_gold_button_style(button: Button, font_size: int = 16) -> void:
 	button.add_theme_stylebox_override("normal", make_button_style(Color("#ffc247"), Color("#6b3d21"), 8, Vector2(0, 5)))
 	button.add_theme_stylebox_override("hover", make_button_style(Color("#ffd778"), Color("#fff0b5"), 8, Vector2(0, 5)))
 	button.add_theme_stylebox_override("pressed", make_button_style(Color("#9b5b26"), Color("#3a1c11"), 8, Vector2(0, 2)))
+
+
+func apply_dialog_button_style(button: Button) -> void:
+	button.add_theme_color_override("font_color", Color("#fff4dc"))
+	button.add_theme_color_override("font_hover_color", Color("#241306"))
+	button.add_theme_color_override("font_pressed_color", Color("#fff7dc"))
+	button.add_theme_stylebox_override("normal", make_button_style(Color(0.18, 0.10, 0.055, 0.88), Color(1.0, 0.76, 0.29, 0.35), 6, Vector2.ZERO))
+	button.add_theme_stylebox_override("hover", make_button_style(Color("#ffc247"), Color("#6b3d21"), 6, Vector2.ZERO))
+	button.add_theme_stylebox_override("pressed", make_button_style(Color("#8f4f22"), Color("#ffc247"), 6, Vector2.ZERO))
 
 
 func apply_touch_button_style(button: Button) -> void:
@@ -2793,6 +3298,47 @@ func make_panel_style(fill: Color, border: Color) -> StyleBoxFlat:
 	return style
 
 
+func make_bag_inner_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.18, 0.09, 0.045, 0.985)
+	style.border_color = Color("#8b4b20")
+	style.border_width_left = 8
+	style.border_width_top = 8
+	style.border_width_right = 8
+	style.border_width_bottom = 8
+	style.corner_radius_top_left = 18
+	style.corner_radius_top_right = 18
+	style.corner_radius_bottom_left = 18
+	style.corner_radius_bottom_right = 18
+	style.content_margin_left = 18
+	style.content_margin_top = 14
+	style.content_margin_right = 18
+	style.content_margin_bottom = 18
+	style.shadow_color = Color(0.04, 0.02, 0.01, 0.55)
+	style.shadow_size = 16
+	style.shadow_offset = Vector2(0, 5)
+	return style
+
+
+func make_bag_pocket_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.09, 0.045, 0.025, 0.62)
+	style.border_color = Color("#c5823e")
+	style.border_width_left = 3
+	style.border_width_top = 3
+	style.border_width_right = 3
+	style.border_width_bottom = 3
+	style.corner_radius_top_left = 10
+	style.corner_radius_top_right = 10
+	style.corner_radius_bottom_left = 10
+	style.corner_radius_bottom_right = 10
+	style.content_margin_left = 10
+	style.content_margin_top = 10
+	style.content_margin_right = 10
+	style.content_margin_bottom = 10
+	return style
+
+
 func wrap_panel(child: Control, size: Vector2) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = size
@@ -2813,11 +3359,82 @@ func _draw() -> void:
 	draw_paths()
 	draw_props_with_player()
 	draw_missions()
+	draw_church_photo_camera()
+	draw_fair_photo_camera()
+	draw_museum_photo_camera()
 	draw_opening_seu_ze_on_map()
 	if opening_active:
 		draw_opening_map_guides()
+	elif church_memory_open:
+		draw_memory_card(get_viewport_rect().size, church_memory_texture)
+	elif fair_memory_open:
+		draw_memory_card(get_viewport_rect().size, fair_memory_texture)
+	elif museum_memory_open:
+		draw_memory_card(get_viewport_rect().size, museum_memory_texture)
+	if (church_memory_open or fair_memory_open or museum_memory_open) and opening_flash > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color(1, 1, 1, opening_flash), true)
 	draw_vignette()
 
+
+
+func draw_church_photo_camera() -> void:
+	if opening_active or learned.has(CHURCH_PHOTO_ID) or church_memory_open or fair_memory_open or museum_memory_open:
+		return
+	var world := get_church_photo_camera_pos()
+	var pos := world - camera_pos
+	var bob := sin(Time.get_ticks_msec() / 260.0) * 2.5
+	draw_ellipse_shadow(pos + Vector2(0, 15), Vector2(15, 4), 0.14)
+	if not camera_sprite.is_empty():
+		var region: Rect2 = camera_sprite["region"]
+		var draw_w := 46.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		var target := Rect2(pos + Vector2(-draw_w / 2.0, -draw_h + bob), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(camera_sprite["texture"], target, region)
+	else:
+		draw_rect(Rect2(pos + Vector2(-19, -28 + bob), Vector2(38, 28)), Color("#ffc247"), true)
+		draw_circle(pos + Vector2(0, -14 + bob), 8, Color("#1b150c"))
+	if player_pos.distance_to(world) < 70.0:
+		draw_collect_key_prompt(pos + Vector2(0, -60 + bob), true)
+
+
+func draw_fair_photo_camera() -> void:
+	if opening_active or learned.has(FAIR_PHOTO_ID) or church_memory_open or fair_memory_open or museum_memory_open:
+		return
+	var world := get_fair_photo_camera_pos()
+	var pos := world - camera_pos
+	var bob := sin(Time.get_ticks_msec() / 260.0) * 2.5
+	draw_ellipse_shadow(pos + Vector2(0, 15), Vector2(15, 4), 0.14)
+	if not camera_sprite.is_empty():
+		var region: Rect2 = camera_sprite["region"]
+		var draw_w := 46.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		var target := Rect2(pos + Vector2(-draw_w / 2.0, -draw_h + bob), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(camera_sprite["texture"], target, region)
+	else:
+		draw_rect(Rect2(pos + Vector2(-19, -28 + bob), Vector2(38, 28)), Color("#ffc247"), true)
+		draw_circle(pos + Vector2(0, -14 + bob), 8, Color("#1b150c"))
+	if player_pos.distance_to(world) < 70.0:
+		draw_collect_key_prompt(pos + Vector2(0, -60 + bob), true)
+
+
+func draw_museum_photo_camera() -> void:
+	if opening_active or learned.has(MUSEUM_PHOTO_ID) or church_memory_open or fair_memory_open or museum_memory_open:
+		return
+	var world := get_museum_photo_camera_pos()
+	var pos := world - camera_pos
+	var bob := sin(Time.get_ticks_msec() / 260.0) * 2.5
+	draw_ellipse_shadow(pos + Vector2(0, 15), Vector2(15, 4), 0.14)
+	if not camera_sprite.is_empty():
+		var region: Rect2 = camera_sprite["region"]
+		var draw_w := 46.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		var target := Rect2(pos + Vector2(-draw_w / 2.0, -draw_h + bob), Vector2(draw_w, draw_h))
+		draw_texture_rect_region(camera_sprite["texture"], target, region)
+	else:
+		draw_rect(Rect2(pos + Vector2(-19, -28 + bob), Vector2(38, 28)), Color("#ffc247"), true)
+		draw_circle(pos + Vector2(0, -14 + bob), 8, Color("#1b150c"))
+	if player_pos.distance_to(world) < 70.0:
+		draw_collect_key_prompt(pos + Vector2(0, -60 + bob), true)
 
 
 func draw_opening_seu_ze_on_map() -> void:
@@ -2919,8 +3536,12 @@ func draw_opening_map_guides() -> void:
 	if opening_phase == "fade":
 		draw_opening_appear_effect(viewport)
 	elif opening_memory_open:
-		draw_opening_memory_card(viewport)
+		draw_memory_card(viewport, null)
+	elif opening_phase == "mototaxi":
+		draw_opening_mototaxi()
+		draw_opening_hint(opening_hint, viewport)
 	elif opening_phase == "photo":
+		draw_opening_mototaxi()
 		draw_opening_camera_collectible()
 		draw_opening_hint(opening_hint, viewport)
 	elif opening_phase in ["walk", "meet"]:
@@ -3094,10 +3715,37 @@ func draw_opening_seu_ze() -> void:
 
 func draw_opening_ui(viewport: Vector2) -> void:
 	if opening_memory_open:
-		draw_opening_memory_card(viewport)
+		draw_memory_card(viewport, null)
 		return
-	if opening_phase in ["photo", "walk", "meet"]:
+	if opening_phase in ["mototaxi", "photo", "walk", "meet"]:
 		draw_opening_hint(opening_hint, viewport)
+
+
+func draw_opening_mototaxi() -> void:
+	var pos := get_opening_mototaxi_pos() - camera_pos
+	var bob := sin(opening_time * 4.0) * 1.5
+	if not opening_market_mototaxi_sprite.is_empty():
+		var sprite := opening_mototaxi_left_sprite if opening_mototaxi_turned_left and not opening_mototaxi_left_sprite.is_empty() else opening_market_mototaxi_sprite
+		var region: Rect2 = sprite["region"]
+		var draw_w := 118.0 if opening_mototaxi_turned_left else 106.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		draw_ellipse_shadow(pos + Vector2(4, 27), Vector2(36, 5), 0.14)
+		if opening_mototaxi_turned_left:
+			draw_set_transform(pos, 0.0, Vector2(-1, 1))
+			draw_texture_rect_region(sprite["texture"], Rect2(Vector2(-draw_w * 0.48, -draw_h + 28.0 + bob), Vector2(draw_w, draw_h)), region)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			var target := Rect2(pos + Vector2(-draw_w * 0.53, -draw_h + 28.0 + bob), Vector2(draw_w, draw_h))
+			draw_texture_rect_region(sprite["texture"], target, region)
+	else:
+		draw_ellipse_shadow(pos + Vector2(4, 21), Vector2(58, 8), 0.16)
+		var base := pos + Vector2(0, bob)
+		draw_circle(base + Vector2(-38, 20), 15, Color("#1a1d22"))
+		draw_circle(base + Vector2(42, 20), 16, Color("#1a1d22"))
+		draw_line(base + Vector2(-34, 6), base + Vector2(14, -16), Color("#e0b339"), 7.0)
+		draw_line(base + Vector2(14, -16), base + Vector2(42, 8), Color("#e0b339"), 7.0)
+	if opening_phase == "mototaxi" and player_pos.distance_to(get_opening_mototaxi_pos()) < 88.0:
+		draw_string(ThemeDB.fallback_font, pos + Vector2(-7, -52 + sin(opening_time * 5.0) * 4.0), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#ffc247"))
 
 
 func draw_opening_camera_collectible() -> void:
@@ -3186,7 +3834,7 @@ func wrap_hint_text(text: String, max_width: float, font_size: int) -> Array[Str
 	return collapsed
 
 
-func draw_opening_memory_card(viewport: Vector2) -> void:
+func draw_memory_card(viewport: Vector2, ready_memory_texture: Texture2D) -> void:
 	draw_rect(Rect2(Vector2.ZERO, viewport), Color(0.03, 0.06, 0.12, 0.48), true)
 	var max_w := minf(viewport.x - 36.0, 1040.0)
 	var max_h := viewport.y - 56.0
@@ -3197,6 +3845,9 @@ func draw_opening_memory_card(viewport: Vector2) -> void:
 		card_w = card_h * 16.0 / 9.0
 	var rect := Rect2((viewport - Vector2(card_w, card_h)) * 0.5, Vector2(card_w, card_h))
 	draw_rect(rect.grow(8.0), Color(0, 0, 0, 0.22), true)
+	if ready_memory_texture != null:
+		draw_texture_rect(ready_memory_texture, rect, false)
+		return
 	draw_rect(rect, Color("#ead8ac"), true)
 	if memory_polaroid_texture:
 		var texture_size := memory_polaroid_texture.get_size()
@@ -3204,6 +3855,7 @@ func draw_opening_memory_card(viewport: Vector2) -> void:
 		var draw_size := texture_size * scale
 		var target := Rect2(rect.position + (rect.size - draw_size) * 0.5, draw_size)
 		draw_texture_rect(memory_polaroid_texture, target, false)
+
 
 
 func world_rect(tile: Vector2i) -> Rect2:
@@ -3818,23 +4470,48 @@ func draw_missions() -> void:
 			continue
 		if String(mission.get("type", "")) == "diary_page" and learned.has(mission["id"]):
 			continue
-		var center := Vector2(mission["tile"]) * TILE - camera_pos
+		var world_center := Vector2(mission["tile"]) * TILE
+		var center := world_center - camera_pos
+		var is_diary_page := String(mission.get("type", "")) == "diary_page"
 		draw_circle(center + Vector2(0, -34), 10 + sin(Time.get_ticks_msec() / 180.0) * 2.0, Color("#ffc247") if learned.has(mission["id"]) else Color("#fff7dc"))
-		if String(mission.get("type", "")) == "diary_page":
-			draw_diary_page(center)
+		if is_diary_page:
+			draw_diary_page(center, player_pos.distance_to(world_center) < 116.0)
 		else:
 			draw_npc(center, mission["id"])
 
 
-func draw_diary_page(pos: Vector2) -> void:
+func draw_diary_page(pos: Vector2, is_near: bool = false) -> void:
 	var bob := sin(Time.get_ticks_msec() / 240.0) * 3.0
-	var paper := Rect2(pos + Vector2(-13, -42 + bob), Vector2(26, 34))
-	draw_ellipse_shadow(pos + Vector2(0, -3), Vector2(13, 3), 0.13)
-	draw_rect(paper, Color("#f5e6b8"), true)
-	draw_rect(paper, Color("#8b6234"), false, 2.0)
-	draw_line(paper.position + Vector2(6, 10), paper.position + Vector2(20, 10), Color("#b88945"), 2.0)
-	draw_line(paper.position + Vector2(6, 17), paper.position + Vector2(18, 17), Color("#b88945"), 2.0)
-	draw_line(paper.position + Vector2(6, 24), paper.position + Vector2(21, 24), Color("#b88945"), 2.0)
+	var size := Vector2(34, 34) * (1.08 if is_near else 1.0)
+	var target := Rect2(pos + Vector2(-size.x * 0.5, -48 + bob), size)
+	draw_ellipse_shadow(pos + Vector2(0, -3), Vector2(15, 3), 0.13)
+	if diary_page_texture != null:
+		draw_texture_rect(diary_page_texture, target, false)
+	else:
+		var paper := Rect2(pos + Vector2(-13, -42 + bob), Vector2(26, 34))
+		draw_rect(paper, Color("#f5e6b8"), true)
+		draw_rect(paper, Color("#8b6234"), false, 2.0)
+		draw_line(paper.position + Vector2(6, 10), paper.position + Vector2(20, 10), Color("#b88945"), 2.0)
+		draw_line(paper.position + Vector2(6, 17), paper.position + Vector2(18, 17), Color("#b88945"), 2.0)
+		draw_line(paper.position + Vector2(6, 24), paper.position + Vector2(21, 24), Color("#b88945"), 2.0)
+	draw_collect_key_prompt(pos + Vector2(0, -82 + bob), is_near)
+
+
+func draw_collect_key_prompt(pos: Vector2, is_near: bool) -> void:
+	var pulse := 1.0 + (0.08 if is_near else 0.03) * sin(Time.get_ticks_msec() / 140.0)
+	var key_size := Vector2(34, 30) * pulse
+	var key_rect := Rect2(pos - key_size * 0.5, key_size)
+	var shadow := key_rect.grow(3.0)
+	draw_rect(shadow, Color(0.05, 0.035, 0.02, 0.38), true)
+	draw_rect(key_rect, Color("#ffc247"), true)
+	draw_rect(key_rect, Color("#6b3d21"), false, 3.0)
+	draw_string(ThemeDB.fallback_font, Vector2(key_rect.position.x, key_rect.position.y + 22.0 * pulse), "F", HORIZONTAL_ALIGNMENT_CENTER, key_rect.size.x, 22, Color("#241306"))
+	if is_near:
+		var label_size := Vector2(78, 24)
+		var label_rect := Rect2(pos + Vector2(-label_size.x * 0.5, 22), label_size)
+		draw_rect(label_rect, Color(0.17, 0.09, 0.04, 0.82), true)
+		draw_rect(label_rect, Color("#ffc247"), false, 2.0)
+		draw_string(ThemeDB.fallback_font, Vector2(label_rect.position.x, label_rect.position.y + 17), "COLETAR", HORIZONTAL_ALIGNMENT_CENTER, label_rect.size.x, 12, Color("#fff7dc"))
 
 
 func draw_npc(pos: Vector2, id: String) -> void:
