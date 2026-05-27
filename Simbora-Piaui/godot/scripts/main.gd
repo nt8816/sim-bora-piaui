@@ -31,6 +31,13 @@ const SEU_ZE_FAN_LOOP_START_FRAME := 55
 const SEU_ZE_FAN_FPS := 18.0
 const SEU_ZE_FAN_CROP_X_RATIO := 430.0 / 1950.0
 const SEU_ZE_FAN_CROP_WIDTH_RATIO := 1040.0 / 1950.0
+const OPENING_INTRO_PHASE := "intro_letreiro"
+const OPENING_INTRO_CAMERA_Y := 900.0
+const OPENING_INTRO_SIGN_POS := Vector2(432, 1104)
+const OPENING_INTRO_MOTOTAXI_POS := Vector2(1360, 1268)
+const OPENING_INTRO_WORLD_W := 1920.0
+const OPENING_INTRO_MOUNTAIN_DRAW_W := 1260.0
+const OPENING_INTRO_MOUNTAIN_OFFSET := Vector2(-630, -660)
 const DONA_RITA_FRAME_COUNT := 61
 const DONA_RITA_FPS := 12.0
 const DONA_RITA_COLUMNS := 8
@@ -62,6 +69,13 @@ var asphalt_texture: Texture2D = preload("res://assets/asfalto.png")
 var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
 var opening_market_mototaxi_texture: Texture2D
 var opening_mototaxi_left_texture: Texture2D
+var opening_intro_mountain_texture: Texture2D
+var opening_intro_sign_texture: Texture2D
+var opening_intro_mototaxi_texture: Texture2D
+var opening_grass_tile_texture: Texture2D
+var opening_double_road_texture: Texture2D
+var opening_roundabout_texture: Texture2D
+var opening_church_front_texture: Texture2D
 var market_stall_source_texture: Texture2D
 var market_stall_texture: Texture2D
 var feira_adaptada_texture: Texture2D = preload("res://assets/feira_adaptada.png")
@@ -106,6 +120,13 @@ var church_picos_sprite := {}
 var asphalt_curve_sprite := {}
 var opening_market_mototaxi_sprite := {}
 var opening_mototaxi_left_sprite := {}
+var opening_intro_mountain_sprite := {}
+var opening_intro_sign_sprite := {}
+var opening_intro_mototaxi_sprite := {}
+var opening_grass_tile_sprite := {}
+var opening_double_road_sprite := {}
+var opening_roundabout_sprite := {}
+var opening_church_front_sprite := {}
 var camera_sprite := {}
 var seu_ze_sprite := {}
 var market_stall_sprites := []
@@ -228,7 +249,7 @@ var opening_mototaxi_lines := [
 	},
 	{
 		"speaker": "Motoboy de Picos",
-		"text": "Quando descer, pega aquela câmera no caminho. Memória boa a gente registra antes que vire poeira."
+		"text": "Quando descer, vá até a praça da igreja. Seu Zé está esperando por você."
 	}
 ]
 var phase1_reward_lines := [
@@ -655,8 +676,22 @@ func load_special_sprites() -> void:
 	asphalt_curve_sprite = make_clean_sprite(asphalt_curve_texture, true)
 	opening_market_mototaxi_texture = load_png_texture("res://assets/opening_market_mototaxi.png")
 	opening_mototaxi_left_texture = load_png_texture("res://assets/opening_mototaxi_left.png")
+	opening_intro_mountain_texture = load_png_texture("res://assets/opening_plaza_garden.png")
+	opening_intro_sign_texture = load_png_texture("res://assets/opening_picos_sign.png")
+	opening_intro_mototaxi_texture = opening_market_mototaxi_texture
+	opening_grass_tile_texture = load_png_texture("res://assets/opening_grass_tile.png")
+	opening_double_road_texture = load_png_texture("res://assets/opening_double_road.png")
+	opening_roundabout_texture = load_png_texture("res://assets/opening_roundabout.png")
+	opening_church_front_texture = load_png_texture("res://assets/opening_church_front.png")
 	opening_market_mototaxi_sprite = make_mototaxi_sprite(opening_market_mototaxi_texture)
 	opening_mototaxi_left_sprite = make_mototaxi_sprite(opening_mototaxi_left_texture)
+	opening_intro_mountain_sprite = make_clean_sprite(opening_intro_mountain_texture, true)
+	opening_intro_sign_sprite = make_clean_sprite(opening_intro_sign_texture, true)
+	opening_intro_mototaxi_sprite = make_mototaxi_sprite(opening_intro_mototaxi_texture)
+	opening_grass_tile_sprite = make_clean_sprite(opening_grass_tile_texture, false)
+	opening_double_road_sprite = make_clean_sprite(opening_double_road_texture, false)
+	opening_roundabout_sprite = make_clean_sprite(opening_roundabout_texture, true)
+	opening_church_front_sprite = make_clean_sprite(opening_church_front_texture, true)
 	camera_sprite = make_clean_sprite(camera_texture, true)
 	bag_icon_texture = load_clean_icon_texture("res://assets/icone_mochila.png")
 	diary_page_texture = load_dark_background_png_texture("res://assets/papel_elemento.png")
@@ -1275,7 +1310,7 @@ func near_mission(x: int, y: int) -> bool:
 
 
 func setup_opening_spawn() -> void:
-	opening_phase = "fade"
+	opening_phase = OPENING_INTRO_PHASE
 	opening_time = 0.0
 	opening_memory_open = false
 	opening_ze_ready = false
@@ -1290,15 +1325,60 @@ func setup_opening_spawn() -> void:
 	opening_flash = 0.0
 	seu_ze_fan_started_msec = -1
 	seu_ze_fan_intro_done = false
-	opening_hint = "Toque no ícone para registrar sua primeira memória!"
+	opening_hint = "Passe pelo letreiro de Picos e encontre o mototáxi para seguir viagem."
 	update_memory_continue_button()
-	player_pos = get_opening_spawn_pos()
+	player_pos = get_opening_intro_spawn_pos()
 	player_dir = "right"
 	walk_time = 0.0
 	var viewport := get_viewport_rect().size
-	camera_pos = player_pos - viewport / 2.0
-	camera_pos.x = clampf(camera_pos.x, 0.0, WORLD_W * TILE - viewport.x)
-	camera_pos.y = clampf(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
+	camera_pos = get_opening_intro_camera_pos(viewport, player_pos.x)
+
+
+func get_opening_intro_spawn_pos() -> Vector2:
+	return Vector2(190, 1268)
+
+
+func get_opening_intro_camera_pos(viewport: Vector2, focus_x: float) -> Vector2:
+	var focus_y := OPENING_INTRO_MOTOTAXI_POS.y - viewport.y * 0.66
+	return Vector2(
+		clampf(focus_x - viewport.x * 0.42, 0.0, maxf(0.0, OPENING_INTRO_WORLD_W - viewport.x)),
+		clampf(minf(OPENING_INTRO_CAMERA_Y, focus_y), WORLD_TOP_TILE * TILE, maxf(WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y))
+	)
+
+
+func get_opening_intro_mototaxi_pos() -> Vector2:
+	return OPENING_INTRO_MOTOTAXI_POS
+
+
+func get_opening_intro_bounds() -> Rect2:
+	var viewport := get_viewport_rect().size
+	var top_margin := 108.0
+	var bottom_margin := 32.0
+	var side_margin := 26.0
+	return Rect2(
+		Vector2(side_margin, camera_pos.y + top_margin),
+		Vector2(maxf(1.0, OPENING_INTRO_WORLD_W - side_margin * 2.0), maxf(1.0, viewport.y - top_margin - bottom_margin))
+	)
+
+
+func get_opening_intro_mountain_rect() -> Rect2:
+	var draw_h := 360.0
+	if not opening_intro_mountain_sprite.is_empty():
+		var region: Rect2 = opening_intro_mountain_sprite["region"]
+		draw_h = OPENING_INTRO_MOUNTAIN_DRAW_W * (region.size.y / region.size.x)
+	return Rect2(OPENING_INTRO_SIGN_POS + OPENING_INTRO_MOUNTAIN_OFFSET, Vector2(OPENING_INTRO_MOUNTAIN_DRAW_W, draw_h))
+
+
+func get_opening_intro_mountain_collision_rect() -> Rect2:
+	var mountain_rect := get_opening_intro_mountain_rect()
+	return Rect2(
+		mountain_rect.position + Vector2(130.0, mountain_rect.size.y * 0.60),
+		Vector2(mountain_rect.size.x - 260.0, mountain_rect.size.y * 0.34)
+	)
+
+
+func get_church_plaza_spawn_pos() -> Vector2:
+	return Vector2(picos_church_tile) * TILE + Vector2(90, 220)
 
 
 func get_opening_spawn_pos() -> Vector2:
@@ -1334,6 +1414,15 @@ func update_opening(delta: float) -> void:
 	opening_time += delta
 	opening_flash = maxf(0.0, opening_flash - delta * 3.2)
 	if opening_memory_open:
+		return
+
+	if opening_phase == OPENING_INTRO_PHASE:
+		update_opening_intro(delta)
+		place_label.text = "Picos"
+		if hint_label:
+			hint_label.visible = false
+		if hint_panel:
+			hint_panel.visible = false
 		return
 
 	if opening_phase == "fade":
@@ -1389,6 +1478,47 @@ func update_opening(delta: float) -> void:
 	if hint_panel:
 		hint_panel.visible = false
 
+func update_opening_intro(delta: float) -> void:
+	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	move += touch_vector
+	if touch_buttons.get("left", false):
+		move.x -= 1
+	if touch_buttons.get("right", false):
+		move.x += 1
+	if touch_buttons.get("up", false):
+		move.y -= 1
+	if touch_buttons.get("down", false):
+		move.y += 1
+	if move.length() > 1:
+		move = move.normalized()
+
+	if move.length() > 0:
+		player_dir = "right" if abs(move.x) > abs(move.y) and move.x > 0 else player_dir
+		player_dir = "left" if abs(move.x) > abs(move.y) and move.x < 0 else player_dir
+		player_dir = "down" if abs(move.y) >= abs(move.x) and move.y > 0 else player_dir
+		player_dir = "up" if abs(move.y) >= abs(move.x) and move.y < 0 else player_dir
+		walk_time += delta * 9.0
+		move_opening_intro_player(Vector2(move.x * current_speed * delta, 0))
+		move_opening_intro_player(Vector2(0, move.y * current_speed * delta))
+	else:
+		walk_time = 0.0
+
+	var viewport := get_viewport_rect().size
+	camera_pos = get_opening_intro_camera_pos(viewport, player_pos.x)
+	var near_mototaxi := player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0
+	opening_hint = "Aperte F no mototáxi para seguir viagem." if near_mototaxi else "Passe pelo letreiro de Picos e encontre o mototáxi para seguir viagem."
+
+
+func move_opening_intro_player(delta_pos: Vector2) -> void:
+	var next_pos := player_pos + delta_pos
+	var actor_rect := Rect2(next_pos + Vector2(-12.0, 8.0), Vector2(24.0, 12.0))
+	if not actor_rect.intersects(get_opening_intro_mountain_collision_rect()):
+		player_pos = next_pos
+	var bounds := get_opening_intro_bounds()
+	player_pos.x = clampf(player_pos.x, bounds.position.x, bounds.position.x + bounds.size.x)
+	player_pos.y = clampf(player_pos.y, bounds.position.y, bounds.position.y + bounds.size.y)
+
+
 func handle_opening_pointer(screen_pos: Vector2) -> bool:
 	if opening_memory_open:
 		return false
@@ -1404,11 +1534,11 @@ func interact_opening() -> void:
 		return
 	if opening_memory_open:
 		return
-	if opening_phase == "mototaxi":
-		if player_pos.distance_to(get_opening_mototaxi_pos()) < 88.0:
+	if opening_phase == OPENING_INTRO_PHASE:
+		if player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
 			start_mototaxi_dialog()
 		else:
-			opening_hint = "Chegue mais perto do motoboy para conversar."
+			opening_hint = "Chegue perto do mototáxi depois do letreiro e aperte F."
 		return
 	if opening_phase == "photo":
 		if player_pos.distance_to(get_opening_camera_pos()) < 58.0:
@@ -1449,11 +1579,18 @@ func advance_mototaxi_dialog() -> void:
 func finish_mototaxi_dialog() -> void:
 	opening_mototaxi_dialog_active = false
 	opening_mototaxi_turned_left = true
-	player_dir = "right"
 	close_dialog()
-	opening_phase = "photo"
+	opening_phase = "meet"
 	opening_time = 0.0
-	opening_hint = "Pegue a câmera no caminho para registrar sua primeira memória."
+	opening_ze_ready = true
+	opening_hint = "Aperte F para falar com Seu Zé."
+	player_pos = get_church_plaza_spawn_pos()
+	player_dir = "up"
+	walk_time = 0.0
+	var viewport := get_viewport_rect().size
+	camera_pos = player_pos - viewport / 2.0
+	camera_pos.x = clampf(camera_pos.x, 0.0, WORLD_W * TILE - viewport.x)
+	camera_pos.y = clampf(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 
 
 func collect_opening_camera() -> void:
@@ -3353,6 +3490,10 @@ func wrap_panel(child: Control, size: Vector2) -> PanelContainer:
 
 
 func _draw() -> void:
+	if opening_active and opening_phase == OPENING_INTRO_PHASE:
+		draw_opening_intro()
+		draw_vignette()
+		return
 	draw_ground()
 	draw_church_plaza()
 	draw_ozildo_plaza()
@@ -3864,6 +4005,130 @@ func world_rect(tile: Vector2i) -> Rect2:
 
 func world_pos(pos: Vector2) -> Vector2:
 	return pos - camera_pos
+
+
+func draw_opening_intro() -> void:
+	var viewport := get_viewport_rect().size
+	draw_opening_intro_backdrop(viewport)
+	draw_opening_intro_road(viewport)
+	draw_opening_intro_sign()
+	var mototaxi_pos := get_opening_intro_mototaxi_pos()
+	if player_pos.y < mototaxi_pos.y:
+		draw_player()
+		draw_opening_intro_mototaxi(mototaxi_pos)
+	else:
+		draw_opening_intro_mototaxi(mototaxi_pos)
+		draw_player()
+	draw_opening_hint(opening_hint, viewport)
+	if opening_flash > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, viewport), Color(1, 1, 1, opening_flash), true)
+
+func draw_opening_intro_backdrop(viewport: Vector2) -> void:
+	draw_rect(Rect2(Vector2.ZERO, viewport), Color("#f7efd8"), true)
+	draw_rect(Rect2(Vector2(0, viewport.y * 0.49), Vector2(viewport.x, viewport.y * 0.51)), Color("#c7aa62"), true)
+	draw_opening_intro_grass(viewport)
+	var sign_screen := OPENING_INTRO_SIGN_POS - camera_pos
+	var mountain_rect := get_opening_intro_mountain_rect()
+	var mountain_screen_rect := Rect2(mountain_rect.position - camera_pos, mountain_rect.size)
+	if not opening_intro_mountain_sprite.is_empty():
+		var region: Rect2 = opening_intro_mountain_sprite["region"]
+		draw_ellipse_shadow(mountain_screen_rect.position + Vector2(mountain_screen_rect.size.x * 0.5, mountain_screen_rect.size.y - 8.0), Vector2(mountain_screen_rect.size.x * 0.42, 15.0), 0.10)
+		draw_texture_rect_region(opening_intro_mountain_sprite["texture"], mountain_screen_rect, region)
+		return
+	var hill_rect := Rect2(sign_screen + Vector2(-338, -250), Vector2(676, 202))
+	draw_ellipse_shadow(hill_rect.position + Vector2(hill_rect.size.x * 0.5, hill_rect.size.y + 6.0), Vector2(286, 12), 0.12)
+	draw_rect(Rect2(hill_rect.position + Vector2(0, 52), Vector2(hill_rect.size.x, hill_rect.size.y - 52)), Color("#b45f2d"), true)
+	draw_rect(Rect2(hill_rect.position + Vector2(0, 52), Vector2(hill_rect.size.x, 12)), Color("#da7b38"), true)
+	for i in range(7):
+		var x := hill_rect.position.x + 28 + i * 92
+		var drop := float((i * 17) % 26)
+		draw_line(Vector2(x, hill_rect.position.y + 72 + drop), Vector2(x - 26, hill_rect.position.y + hill_rect.size.y - 6), Color("#6e341f"), 3.0)
+
+
+func draw_opening_intro_grass(viewport: Vector2) -> void:
+	if opening_grass_tile_sprite.is_empty():
+		return
+	var region: Rect2 = opening_grass_tile_sprite["region"]
+	var tile_size := Vector2(192, 192)
+	var start_x := floori(camera_pos.x / tile_size.x) * int(tile_size.x)
+	var start_y := floori(camera_pos.y / tile_size.y) * int(tile_size.y)
+	var end_x := int(camera_pos.x + viewport.x + tile_size.x)
+	var end_y := int(camera_pos.y + viewport.y + tile_size.y)
+	for y in range(start_y, end_y, int(tile_size.y)):
+		for x in range(start_x, end_x, int(tile_size.x)):
+			var target := Rect2(Vector2(x, y) - camera_pos, tile_size)
+			draw_texture_rect_region(opening_grass_tile_sprite["texture"], target, region)
+
+
+func draw_opening_intro_road(_viewport: Vector2) -> void:
+	var road_h := 230.0
+	var road_y := OPENING_INTRO_MOTOTAXI_POS.y - road_h * 0.5
+	draw_opening_intro_asphalt(Rect2(Vector2(0, road_y), Vector2(OPENING_INTRO_WORLD_W, road_h)))
+
+
+func draw_opening_intro_asphalt(world_road_rect: Rect2) -> void:
+	var road_rect := Rect2(world_road_rect.position - camera_pos, world_road_rect.size)
+	draw_opening_intro_asphalt_rect(road_rect, camera_pos)
+
+
+func draw_opening_intro_asphalt_rect(road_rect: Rect2, pattern_offset: Vector2) -> void:
+	draw_rect(road_rect.grow(18.0), Color(0.08, 0.07, 0.06, 0.36), true)
+	draw_rect(road_rect, Color("#151719"), true)
+	draw_rect(Rect2(road_rect.position, Vector2(road_rect.size.x, 18.0)), Color("#24272a"), true)
+	draw_rect(Rect2(road_rect.position + Vector2(0, road_rect.size.y - 18.0), Vector2(road_rect.size.x, 18.0)), Color("#0e1012"), true)
+	var speckle_color := Color(1, 1, 1, 0.035)
+	for x in range(int(road_rect.position.x + pattern_offset.x), int(road_rect.end.x + pattern_offset.x), 34):
+		for y in range(int(road_rect.position.y + pattern_offset.y), int(road_rect.end.y + pattern_offset.y), 31):
+			if (x * 17 + y * 23) % 5 == 0:
+				var sx := float(x + ((x * 13 + y * 7) % 19)) - pattern_offset.x
+				var sy := float(y + ((x * 5 + y * 11) % 17)) - pattern_offset.y
+				draw_rect(Rect2(Vector2(sx, sy), Vector2(5, 3)), speckle_color, true)
+	var shoulder := Color("#ecebe4")
+	draw_rect(Rect2(road_rect.position + Vector2(0, 40), Vector2(road_rect.size.x, 6)), shoulder, true)
+	draw_rect(Rect2(road_rect.position + Vector2(0, road_rect.size.y - 46), Vector2(road_rect.size.x, 6)), shoulder, true)
+	var center_y := road_rect.position.y + road_rect.size.y * 0.5
+	draw_rect(Rect2(Vector2(road_rect.position.x, center_y - 11), Vector2(road_rect.size.x, 8)), Color("#f3d100"), true)
+	draw_rect(Rect2(Vector2(road_rect.position.x, center_y + 5), Vector2(road_rect.size.x, 8)), Color("#f3d100"), true)
+	var lane_y := [road_rect.position.y + road_rect.size.y * 0.27, road_rect.position.y + road_rect.size.y * 0.73]
+	for y in lane_y:
+		var x := road_rect.position.x - fposmod(pattern_offset.x, 118.0)
+		while x < road_rect.end.x:
+			draw_rect(Rect2(Vector2(x, y - 4.0), Vector2(58, 8)), Color("#e9e9e5"), true)
+			x += 118.0
+
+
+func draw_opening_intro_sign() -> void:
+	var pos := OPENING_INTRO_SIGN_POS - camera_pos
+	if not opening_intro_sign_sprite.is_empty():
+		var region: Rect2 = opening_intro_sign_sprite["region"]
+		var draw_w := 380.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		draw_ellipse_shadow(pos + Vector2(52, 18), Vector2(130, 12), 0.10)
+		draw_texture_rect_region(opening_intro_sign_sprite["texture"], Rect2(pos + Vector2(-136, -112), Vector2(draw_w, draw_h)), region)
+		return
+	draw_picos_sign(pos)
+
+
+func draw_opening_intro_mototaxi(pos: Vector2) -> void:
+	var screen_pos := pos - camera_pos
+	var bob := sin(opening_time * 4.0) * 1.5
+	if not opening_intro_mototaxi_sprite.is_empty():
+		var region: Rect2 = opening_intro_mototaxi_sprite["region"]
+		var draw_w := 106.0
+		var draw_h := draw_w * (region.size.y / region.size.x)
+		draw_ellipse_shadow(screen_pos + Vector2(4, 27), Vector2(36, 5), 0.14)
+		draw_texture_rect_region(opening_intro_mototaxi_sprite["texture"], Rect2(screen_pos + Vector2(-draw_w * 0.53, -draw_h + 28.0 + bob), Vector2(draw_w, draw_h)), region)
+	else:
+		draw_ellipse_shadow(screen_pos + Vector2(4, 21), Vector2(58, 8), 0.16)
+		draw_circle(screen_pos + Vector2(-32, 20 + bob), 14, Color("#1a1d22"))
+		draw_circle(screen_pos + Vector2(36, 20 + bob), 14, Color("#1a1d22"))
+		draw_rect(Rect2(screen_pos + Vector2(-42, -20 + bob), Vector2(86, 34)), Color("#d9422f"), true)
+		draw_rect(Rect2(screen_pos + Vector2(-20, -46 + bob), Vector2(38, 34)), Color("#ffc247"), true)
+		draw_rect(Rect2(screen_pos + Vector2(12, -38 + bob), Vector2(34, 18)), Color("#2f78b7"), true)
+		draw_line(screen_pos + Vector2(42, -20 + bob), screen_pos + Vector2(62, -36 + bob), Color("#252525"), 5.0)
+	if player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
+		draw_string(ThemeDB.fallback_font, screen_pos + Vector2(-7, -52 + sin(opening_time * 5.0) * 4.0), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#ffc247"))
+
 
 
 func draw_ground() -> void:

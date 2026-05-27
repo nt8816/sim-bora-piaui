@@ -1,7 +1,7 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1779883141
+::res://::1779898515
 export_presets.cfg::TextFile::-1::1779452617::0::1::::<><><>0<>0<><>::
-::res://assets/::1779891142
+::res://assets/::1779898333
 agua_rio_1.jpeg::CompressedTexture2D::7595669084427081805::1779452617::1779452617::1::::<><><>0<>0<>3c950863bf8fc86c95bc03b99118ab2b<>res://.godot/imported/agua_rio_1.jpeg-500ddd5f6ba995d7e302cc4363821408.ctex::
 agua_rio_2.jpeg::CompressedTexture2D::6809196519705672895::1779452617::1779452617::1::::<><><>0<>0<>b27e93f9ed67864687d4fca2512050e2<>res://.godot/imported/agua_rio_2.jpeg-b9d933ec1e3a36a09f7fc61345f94908.ctex::
 ana_sheet.png::CompressedTexture2D::3051922266860231098::1779812824::1779813032::1::::<><><>0<>0<>5e75f607d7d1bd6f4865aedbbe53c1d0<>res://.godot/imported/ana_sheet.png-7b84323c5d090460cf9f51e31bfffc60.ctex::
@@ -37,8 +37,14 @@ menu_inicial.png::CompressedTexture2D::211961283072288638::1779452617::177945261
 menu_inicial_limpa.png::CompressedTexture2D::3380637710217704914::1779452617::1779452617::1::::<><><>0<>0<>08504b76d5225b3b0099c9aa21cbcfe8<>res://.godot/imported/menu_inicial_limpa.png-0a524fe70631b2e37d67d105da3dbdfd.ctex::
 moeda_troca.png::CompressedTexture2D::7461000949484043733::1779452617::1779452617::1::::<><><>0<>0<>6593f58b53e485d29f3a3ba3dfad4385<>res://.godot/imported/moeda_troca.png-7cdf922134fa48691d8f33d9b516b25d.ctex::
 museu_picos.png::CompressedTexture2D::7645222583743074671::1779452617::1779452617::1::::<><><>0<>0<>e0c3d2c59a61b7ed3fff34ebfdf9465e<>res://.godot/imported/museu_picos.png-c529c7494d3f77e0b15bed4f238704e9.ctex::
+opening_church_front.png::CompressedTexture2D::3754602070571509341::1779898048::1779898333::1::::<><><>0<>0<>ded429d988db032c319418b890edf20f<>res://.godot/imported/opening_church_front.png-cad2319cbfba63b34a3e4538d7fddcc7.ctex::
+opening_double_road.png::CompressedTexture2D::7905734577489846862::1779898033::1779898333::1::::<><><>0<>0<>95d0d6deaabe61a397cd36fc794d9eda<>res://.godot/imported/opening_double_road.png-5c86a0f2ace392d343ea8d56c19f88a3.ctex::
+opening_grass_tile.png::CompressedTexture2D::234201621343122761::1779898033::1779898333::1::::<><><>0<>0<>ddf7991bec8285fc0607c9187d9e45d8<>res://.godot/imported/opening_grass_tile.png-6f4e6a53d20e61a68fc892e761b2d2f8.ctex::
 opening_market_mototaxi.png::CompressedTexture2D::6577533908451792395::1779891142::1779891436::1::::<><><>0<>0<>4397638cbb15294805184a0948256417<>res://.godot/imported/opening_market_mototaxi.png-bccf02225e425e49919062ef004353e4.ctex::
 opening_mototaxi_left.png::CompressedTexture2D::4842699448659820615::1779891142::1779891436::1::::<><><>0<>0<>66b09e6a6ef240904390e1bacc3f9202<>res://.godot/imported/opening_mototaxi_left.png-b7c070174d66ed14618eff469c25348b.ctex::
+opening_picos_sign.png::CompressedTexture2D::8286859687575893976::1779893679::1779895242::1::::<><><>0<>0<>fdc55f51484d63cd0b9c4dbb2b4d59d4<>res://.godot/imported/opening_picos_sign.png-8d4d43bc573511254dc9fd0abd82c6d1.ctex::
+opening_plaza_garden.png::CompressedTexture2D::1483291630407916113::1779893679::1779895242::1::::<><><>0<>0<>beb8c57757f41cf60b6abcf2f7220131<>res://.godot/imported/opening_plaza_garden.png-4116257bc116c55b72883c3aa75ee78c.ctex::
+opening_roundabout.png::CompressedTexture2D::428994763036606593::1779898048::1779898333::1::::<><><>0<>0<>7f01046de86130cf46a9f9e2748fcf84<>res://.godot/imported/opening_roundabout.png-40b60c0b74ced5591e1344dbc394889e.ctex::
 papel_elemento.png::CompressedTexture2D::2093039378006534225::1779878928::1779891436::1::::<><><>0<>0<>d84b5918ab4027139b3605ff156033cd<>res://.godot/imported/papel_elemento.png-444e6e00f9263cfb599f36fd06fe1a72.ctex::
 personagem_animacoes.jpeg::CompressedTexture2D::5676075875532068176::1779452617::1779452617::1::::<><><>0<>0<>82b92a5406489f485e4b41c79e8fdfe2<>res://.godot/imported/personagem_animacoes.jpeg-813c59264ca5dce03e40a0fb5ad528f1.ctex::
 personagem_animacoes.png::CompressedTexture2D::7549499891935420598::1779452617::1779452617::1::::<><><>0<>0<>350176271ab24b245a7b4b861ffbf868<>res://.godot/imported/personagem_animacoes.png-62976b1231e0159af9c0ac573c7cb9d7.ctex::
@@ -147,5 +153,5 @@ frame_059.png::CompressedTexture2D::4756846824315929155::1779752930::1779742919:
 frame_060.png::CompressedTexture2D::2442252817814074523::1779752930::1779742919::1::::<><><>0<>0<>8c6855d4cb8829fdd3b18e207ef98b69<>res://.godot/imported/frame_060.png-94683601838e5874224217014d6b8288.ctex::
 ::res://scenes/::1779452617
 Main.tscn::PackedScene::-1::1779452617::0::1::::<><><>0<>0<><>::res://scripts/main.gd
-::res://scripts/::1779817330
-main.gd::GDScript::5675656087221516802::1779891287::0::1::::<>Node2D<><>0<>0<><>::
+::res://scripts/::1779898181
+main.gd::GDScript::5675656087221516802::1779898181::0::1::::<>Node2D<><>0<>0<><>::
