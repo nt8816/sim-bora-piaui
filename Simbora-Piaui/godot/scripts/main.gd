@@ -70,12 +70,8 @@ var asphalt_curve_texture: Texture2D = preload("res://assets/asfalto_curva.png")
 var opening_market_mototaxi_texture: Texture2D
 var opening_mototaxi_left_texture: Texture2D
 var opening_intro_mountain_texture: Texture2D
-var opening_intro_sign_texture: Texture2D
 var opening_intro_mototaxi_texture: Texture2D
 var opening_grass_tile_texture: Texture2D
-var opening_double_road_texture: Texture2D
-var opening_roundabout_texture: Texture2D
-var opening_church_front_texture: Texture2D
 var market_stall_source_texture: Texture2D
 var market_stall_texture: Texture2D
 var feira_adaptada_texture: Texture2D = preload("res://assets/feira_adaptada.png")
@@ -98,11 +94,6 @@ var water_textures := [
 	preload("res://assets/agua_rio_2.jpeg")
 ]
 
-var future_trade_items := {
-	"moeda_troca": preload("res://assets/moeda_troca.png"),
-	"cabaca_troca": preload("res://assets/cabaca_troca.jpeg")
-}
-
 var tree_textures := {
 	"aroeira": preload("res://assets/aroeira.png"),
 	"buriti": preload("res://assets/buriti.png"),
@@ -121,12 +112,8 @@ var asphalt_curve_sprite := {}
 var opening_market_mototaxi_sprite := {}
 var opening_mototaxi_left_sprite := {}
 var opening_intro_mountain_sprite := {}
-var opening_intro_sign_sprite := {}
 var opening_intro_mototaxi_sprite := {}
 var opening_grass_tile_sprite := {}
-var opening_double_road_sprite := {}
-var opening_roundabout_sprite := {}
-var opening_church_front_sprite := {}
 var camera_sprite := {}
 var seu_ze_sprite := {}
 var market_stall_sprites := []
@@ -161,6 +148,8 @@ var opening_camera_collected := false
 var opening_mototaxi_turned_left := false
 var opening_mototaxi_dialog_active := false
 var opening_mototaxi_dialog_index := 0
+var opening_intro_mototaxi_pos := Vector2.ZERO
+var opening_intro_mototaxi_arriving := false
 var opening_script_active := false
 var opening_script_index := 0
 var phase1_reward_active := false
@@ -537,7 +526,7 @@ func clear_player_spawn_area() -> void:
 		if not prop.has("tile"):
 			return true
 		var tile: Vector2i = prop["tile"]
-		var protected_prop: bool = prop.get("type", "") in ["ana_museu", "dona_rita", "church_picos", "picos_sign", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal"]
+		var protected_prop: bool = prop.get("type", "") in ["ana_museu", "dona_rita", "church_picos", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal"]
 		var near_spawn: bool = abs(tile.x - spawn_tile.x) <= 1 and abs(tile.y - spawn_tile.y) <= 2
 		return protected_prop or not near_spawn
 	)
@@ -677,21 +666,13 @@ func load_special_sprites() -> void:
 	opening_market_mototaxi_texture = load_png_texture("res://assets/opening_market_mototaxi.png")
 	opening_mototaxi_left_texture = load_png_texture("res://assets/opening_mototaxi_left.png")
 	opening_intro_mountain_texture = load_png_texture("res://assets/opening_plaza_garden.png")
-	opening_intro_sign_texture = load_png_texture("res://assets/opening_picos_sign.png")
 	opening_intro_mototaxi_texture = opening_market_mototaxi_texture
 	opening_grass_tile_texture = load_png_texture("res://assets/opening_grass_tile.png")
-	opening_double_road_texture = load_png_texture("res://assets/opening_double_road.png")
-	opening_roundabout_texture = load_png_texture("res://assets/opening_roundabout.png")
-	opening_church_front_texture = load_png_texture("res://assets/opening_church_front.png")
 	opening_market_mototaxi_sprite = make_mototaxi_sprite(opening_market_mototaxi_texture)
 	opening_mototaxi_left_sprite = make_mototaxi_sprite(opening_mototaxi_left_texture)
 	opening_intro_mountain_sprite = make_clean_sprite(opening_intro_mountain_texture, true)
-	opening_intro_sign_sprite = make_clean_sprite(opening_intro_sign_texture, true)
 	opening_intro_mototaxi_sprite = make_mototaxi_sprite(opening_intro_mototaxi_texture)
 	opening_grass_tile_sprite = make_clean_sprite(opening_grass_tile_texture, false)
-	opening_double_road_sprite = make_clean_sprite(opening_double_road_texture, false)
-	opening_roundabout_sprite = make_clean_sprite(opening_roundabout_texture, true)
-	opening_church_front_sprite = make_clean_sprite(opening_church_front_texture, true)
 	camera_sprite = make_clean_sprite(camera_texture, true)
 	bag_icon_texture = load_clean_icon_texture("res://assets/icone_mochila.png")
 	diary_page_texture = load_dark_background_png_texture("res://assets/papel_elemento.png")
@@ -1108,9 +1089,7 @@ func add_picos_district(sx: int, sy: int) -> void:
 	for offset in [Vector2i(-12, 5), Vector2i(-8, 5), Vector2i(-3, 5), Vector2i(3, 5), Vector2i(8, -3)]:
 		props.append({"type": "city_bench", "tile": Vector2i(sx, sy) + offset})
 
-	var picos_sign_tile := Vector2i(sx - 31, sy + 8)
-	props.append({"type": "picos_sign", "tile": picos_sign_tile})
-	add_picos_sign_collision(picos_sign_tile)
+	add_picos_left_barrier()
 	add_picos_church(picos_church_tile.x, picos_church_tile.y)
 	add_phase1_diary_pages()
 	clear_church_plaza_props()
@@ -1132,7 +1111,7 @@ func clear_church_plaza_props() -> void:
 			return true
 		var tile: Vector2i = prop["tile"]
 		var inside_plaza: bool = tile.x >= picos_church_plaza_tile.x and tile.x < picos_church_plaza_tile.x + picos_church_plaza_size.x and tile.y >= picos_church_plaza_tile.y and tile.y < picos_church_plaza_tile.y + picos_church_plaza_size.y
-		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "picos_sign", "museum_picos", "market_stall", "produce_crate", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal", "dona_rita"]
+		var keep_landmark: bool = prop.get("type", "") in ["church_picos", "museum_picos", "market_stall", "produce_crate", "feira_adaptada", "feira_roupas_horizontal", "feira_bancas_horizontal", "dona_rita"]
 		return keep_landmark or not inside_plaza
 	)
 
@@ -1152,16 +1131,11 @@ func add_city_solid(tile: Vector2i) -> void:
 			add_solid(x, y)
 
 
-func add_picos_sign_collision(tile: Vector2i) -> void:
-	var pos := Vector2(tile) * TILE
-	if picos_sign_texture:
-		var draw_w := 500.0
-		var draw_h := draw_w * (picos_sign_texture.get_height() / float(picos_sign_texture.get_width()))
-		var target := Rect2(pos + Vector2(-200, -80), Vector2(draw_w, draw_h))
-		# Keep the road edge usable while blocking the actual sign, base, and garden art.
-		solid_rects.append(Rect2(target.position + Vector2(34, 34), Vector2(target.size.x - 68, target.size.y - 58)))
-	else:
-		solid_rects.append(Rect2(pos + Vector2(0, 0), Vector2(108, 78)))
+func add_picos_left_barrier() -> void:
+	var x := float(picos_church_plaza_tile.x - 1) * TILE
+	var y := float(WORLD_TOP_TILE) * TILE
+	var h := float(WORLD_H - WORLD_TOP_TILE) * TILE
+	solid_rects.append(Rect2(Vector2(x, y), Vector2(TILE, h)))
 
 
 func add_picos_museum(sx: int, sy: int) -> void:
@@ -1318,6 +1292,8 @@ func setup_opening_spawn() -> void:
 	opening_mototaxi_turned_left = false
 	opening_mototaxi_dialog_active = false
 	opening_mototaxi_dialog_index = 0
+	opening_intro_mototaxi_pos = OPENING_INTRO_MOTOTAXI_POS
+	opening_intro_mototaxi_arriving = false
 	opening_script_active = false
 	opening_script_index = 0
 	phase1_reward_active = false
@@ -1338,16 +1314,15 @@ func get_opening_intro_spawn_pos() -> Vector2:
 	return Vector2(190, 1268)
 
 
-func get_opening_intro_camera_pos(viewport: Vector2, focus_x: float) -> Vector2:
-	var focus_y := OPENING_INTRO_MOTOTAXI_POS.y - viewport.y * 0.66
+func get_opening_intro_camera_pos(viewport: Vector2, _focus_x: float) -> Vector2:
 	return Vector2(
-		clampf(focus_x - viewport.x * 0.42, 0.0, maxf(0.0, OPENING_INTRO_WORLD_W - viewport.x)),
-		clampf(minf(OPENING_INTRO_CAMERA_Y, focus_y), WORLD_TOP_TILE * TILE, maxf(WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y))
+		0.0,
+		clampf(OPENING_INTRO_CAMERA_Y, WORLD_TOP_TILE * TILE, maxf(WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y))
 	)
 
 
 func get_opening_intro_mototaxi_pos() -> Vector2:
-	return OPENING_INTRO_MOTOTAXI_POS
+	return OPENING_INTRO_MOTOTAXI_POS if opening_intro_mototaxi_pos == Vector2.ZERO else opening_intro_mototaxi_pos
 
 
 func get_opening_intro_bounds() -> Rect2:
@@ -1377,6 +1352,10 @@ func get_opening_intro_mountain_collision_rect() -> Rect2:
 	)
 
 
+func get_main_world_min_x() -> float:
+	return float(picos_church_plaza_tile.x) * TILE
+
+
 func get_church_plaza_spawn_pos() -> Vector2:
 	return Vector2(picos_church_tile) * TILE + Vector2(90, 220)
 
@@ -1387,7 +1366,7 @@ func get_opening_spawn_pos() -> Vector2:
 
 
 func get_opening_camera_pos() -> Vector2:
-	return OPENING_INTRO_SIGN_POS + Vector2(178, 158)
+	return OPENING_INTRO_SIGN_POS + Vector2(250, 28)
 
 
 func get_opening_mototaxi_pos() -> Vector2:
@@ -1470,7 +1449,7 @@ func update_opening(delta: float) -> void:
 	var viewport := get_viewport_rect().size
 	var target := player_pos - viewport / 2.0
 	camera_pos = camera_pos.lerp(target, 0.12)
-	camera_pos.x = clampf(camera_pos.x, 0.0, WORLD_W * TILE - viewport.x)
+	camera_pos.x = clampf(camera_pos.x, get_main_world_min_x(), WORLD_W * TILE - viewport.x)
 	camera_pos.y = clampf(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 	place_label.text = "Picos"
 	if hint_label:
@@ -1479,6 +1458,10 @@ func update_opening(delta: float) -> void:
 		hint_panel.visible = false
 
 func update_opening_intro(delta: float) -> void:
+	if opening_intro_mototaxi_arriving:
+		update_opening_intro_mototaxi_arrival(delta)
+		return
+
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	move += touch_vector
 	if touch_buttons.get("left", false):
@@ -1515,6 +1498,22 @@ func update_opening_intro(delta: float) -> void:
 		opening_hint = "Pegue a câmera perto do letreiro e encontre o mototáxi."
 
 
+func update_opening_intro_mototaxi_arrival(delta: float) -> void:
+	var viewport := get_viewport_rect().size
+	camera_pos = get_opening_intro_camera_pos(viewport, player_pos.x)
+	walk_time = 0.0
+	player_dir = "right"
+	var target := player_pos + Vector2(-92.0, 0.0)
+	target.x = clampf(target.x, 90.0, OPENING_INTRO_WORLD_W - 90.0)
+	target.y = player_pos.y - 8.0
+	opening_intro_mototaxi_pos = opening_intro_mototaxi_pos.move_toward(target, 300.0 * delta)
+	opening_hint = "O mototáxi está chegando para falar com você."
+	if opening_intro_mototaxi_pos.distance_to(target) < 8.0:
+		opening_intro_mototaxi_arriving = false
+		opening_intro_mototaxi_pos = target
+		start_mototaxi_dialog()
+
+
 func move_opening_intro_player(delta_pos: Vector2) -> void:
 	var next_pos := player_pos + delta_pos
 	var actor_rect := Rect2(next_pos + Vector2(-12.0, 8.0), Vector2(24.0, 12.0))
@@ -1543,7 +1542,7 @@ func interact_opening() -> void:
 	if opening_phase == OPENING_INTRO_PHASE:
 		if not opening_camera_collected and player_pos.distance_to(get_opening_camera_pos()) < 58.0:
 			collect_opening_camera()
-		elif player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
+		elif not opening_intro_mototaxi_arriving and player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
 			start_mototaxi_dialog()
 		else:
 			opening_hint = "Pegue a câmera perto do letreiro ou chegue no mototáxi."
@@ -1562,7 +1561,7 @@ func start_mototaxi_dialog() -> void:
 	opening_mototaxi_dialog_active = true
 	opening_mototaxi_dialog_index = 0
 	opening_mototaxi_turned_left = false
-	player_dir = "right"
+	player_dir = "left" if get_opening_intro_mototaxi_pos().x < player_pos.x else "right"
 	show_mototaxi_dialog_line()
 
 
@@ -1597,7 +1596,7 @@ func finish_mototaxi_dialog() -> void:
 	walk_time = 0.0
 	var viewport := get_viewport_rect().size
 	camera_pos = player_pos - viewport / 2.0
-	camera_pos.x = clampf(camera_pos.x, 0.0, WORLD_W * TILE - viewport.x)
+	camera_pos.x = clampf(camera_pos.x, get_main_world_min_x(), WORLD_W * TILE - viewport.x)
 	camera_pos.y = clampf(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 
 
@@ -1620,7 +1619,9 @@ func take_opening_photo() -> void:
 func close_opening_memory() -> void:
 	opening_memory_open = false
 	if opening_phase == OPENING_INTRO_PHASE:
-		opening_hint = "Agora encontre o mototáxi para seguir viagem."
+		opening_intro_mototaxi_pos = Vector2(maxf(40.0, player_pos.x - 520.0), player_pos.y - 8.0)
+		opening_intro_mototaxi_arriving = true
+		opening_hint = "O mototáxi está chegando para falar com você."
 	else:
 		opening_phase = "walk"
 		opening_hint = "Use as setas ou arraste o dedo para caminhar e explorar a cidade."
@@ -1690,7 +1691,7 @@ func update_player(delta: float) -> void:
 	var viewport := get_viewport_rect().size
 	var target := player_pos - viewport / 2.0
 	camera_pos = camera_pos.lerp(target, 0.12)
-	camera_pos.x = clamp(camera_pos.x, 0, WORLD_W * TILE - viewport.x)
+	camera_pos.x = clamp(camera_pos.x, get_main_world_min_x(), WORLD_W * TILE - viewport.x)
 	camera_pos.y = clamp(camera_pos.y, WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y)
 
 	place_label.text = "Picos"
@@ -1707,6 +1708,8 @@ func move_player(delta_pos: Vector2) -> void:
 
 
 func collides(pos: Vector2) -> bool:
+	if pos.x < get_main_world_min_x() + 12.0:
+		return true
 	var actor_rect := Rect2(pos + Vector2(-12.0, 8.0), Vector2(24.0, 12.0))
 	if collides_church_sprite(actor_rect):
 		return true
@@ -4116,14 +4119,14 @@ func draw_opening_intro_asphalt_rect(road_rect: Rect2, pattern_offset: Vector2) 
 
 func draw_opening_intro_sign() -> void:
 	var pos := OPENING_INTRO_SIGN_POS - camera_pos
-	if not opening_intro_sign_sprite.is_empty():
-		var region: Rect2 = opening_intro_sign_sprite["region"]
-		var draw_w := 380.0
-		var draw_h := draw_w * (region.size.y / region.size.x)
-		draw_ellipse_shadow(pos + Vector2(52, 18), Vector2(130, 12), 0.10)
-		draw_texture_rect_region(opening_intro_sign_sprite["texture"], Rect2(pos + Vector2(-136, -112), Vector2(draw_w, draw_h)), region)
+	if picos_sign_texture:
+		var draw_w := 620.0
+		var draw_h := draw_w * (picos_sign_texture.get_height() / float(picos_sign_texture.get_width()))
+		var target := Rect2(pos + Vector2(-170, -180), Vector2(draw_w, draw_h))
+		draw_ellipse_shadow(pos + Vector2(120, 58), Vector2(190, 14), 0.12)
+		draw_texture_rect(picos_sign_texture, target, false)
 		return
-	draw_picos_sign(pos)
+	draw_opening_picos_sign(pos)
 
 
 func draw_opening_intro_mototaxi(pos: Vector2) -> void:
@@ -4143,14 +4146,19 @@ func draw_opening_intro_mototaxi(pos: Vector2) -> void:
 		draw_rect(Rect2(screen_pos + Vector2(-20, -46 + bob), Vector2(38, 34)), Color("#ffc247"), true)
 		draw_rect(Rect2(screen_pos + Vector2(12, -38 + bob), Vector2(34, 18)), Color("#2f78b7"), true)
 		draw_line(screen_pos + Vector2(42, -20 + bob), screen_pos + Vector2(62, -36 + bob), Color("#252525"), 5.0)
-	if player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
+	if not opening_intro_mototaxi_arriving and player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
 		draw_string(ThemeDB.fallback_font, screen_pos + Vector2(-7, -52 + sin(opening_time * 5.0) * 4.0), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#ffc247"))
 
 
 
 func draw_ground() -> void:
-	for x in range(WORLD_W):
-		for y in range(WORLD_TOP_TILE, WORLD_H):
+	var viewport := get_viewport_rect().size
+	var start_x := clampi(int(floor(camera_pos.x / TILE)) - 1, 0, WORLD_W - 1)
+	var end_x := clampi(int(ceil((camera_pos.x + viewport.x) / TILE)) + 1, 0, WORLD_W - 1)
+	var start_y := clampi(int(floor(camera_pos.y / TILE)) - 1, WORLD_TOP_TILE, WORLD_H - 1)
+	var end_y := clampi(int(ceil((camera_pos.y + viewport.y) / TILE)) + 1, WORLD_TOP_TILE, WORLD_H - 1)
+	for x in range(start_x, end_x + 1):
+		for y in range(start_y, end_y + 1):
 			var key := tile_key(x, y)
 			var dry := y > 20 or x > 26
 			var shade := float(((x * 17 + y * 29) % 7) - 3) * 0.018
