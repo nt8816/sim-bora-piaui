@@ -1387,7 +1387,7 @@ func get_opening_spawn_pos() -> Vector2:
 
 
 func get_opening_camera_pos() -> Vector2:
-	return get_opening_spawn_pos() + Vector2(138, -8)
+	return OPENING_INTRO_SIGN_POS + Vector2(178, 158)
 
 
 func get_opening_mototaxi_pos() -> Vector2:
@@ -1505,8 +1505,14 @@ func update_opening_intro(delta: float) -> void:
 
 	var viewport := get_viewport_rect().size
 	camera_pos = get_opening_intro_camera_pos(viewport, player_pos.x)
+	var near_camera := not opening_camera_collected and player_pos.distance_to(get_opening_camera_pos()) < 58.0
 	var near_mototaxi := player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0
-	opening_hint = "Aperte F no mototáxi para seguir viagem." if near_mototaxi else "Passe pelo letreiro de Picos e encontre o mototáxi para seguir viagem."
+	if near_camera:
+		opening_hint = "Aperte F para pegar a câmera."
+	elif near_mototaxi:
+		opening_hint = "Aperte F no mototáxi para seguir viagem."
+	else:
+		opening_hint = "Pegue a câmera perto do letreiro e encontre o mototáxi."
 
 
 func move_opening_intro_player(delta_pos: Vector2) -> void:
@@ -1522,7 +1528,7 @@ func move_opening_intro_player(delta_pos: Vector2) -> void:
 func handle_opening_pointer(screen_pos: Vector2) -> bool:
 	if opening_memory_open:
 		return false
-	if opening_phase == "photo" and get_opening_camera_collect_rect().has_point(screen_pos):
+	if opening_phase in [OPENING_INTRO_PHASE, "photo"] and not opening_camera_collected and get_opening_camera_collect_rect().has_point(screen_pos):
 		collect_opening_camera()
 		return true
 	return false
@@ -1535,10 +1541,12 @@ func interact_opening() -> void:
 	if opening_memory_open:
 		return
 	if opening_phase == OPENING_INTRO_PHASE:
-		if player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
+		if not opening_camera_collected and player_pos.distance_to(get_opening_camera_pos()) < 58.0:
+			collect_opening_camera()
+		elif player_pos.distance_to(get_opening_intro_mototaxi_pos()) < 88.0:
 			start_mototaxi_dialog()
 		else:
-			opening_hint = "Chegue perto do mototáxi depois do letreiro e aperte F."
+			opening_hint = "Pegue a câmera perto do letreiro ou chegue no mototáxi."
 		return
 	if opening_phase == "photo":
 		if player_pos.distance_to(get_opening_camera_pos()) < 58.0:
@@ -1611,9 +1619,12 @@ func take_opening_photo() -> void:
 
 func close_opening_memory() -> void:
 	opening_memory_open = false
-	opening_phase = "walk"
+	if opening_phase == OPENING_INTRO_PHASE:
+		opening_hint = "Agora encontre o mototáxi para seguir viagem."
+	else:
+		opening_phase = "walk"
+		opening_hint = "Use as setas ou arraste o dedo para caminhar e explorar a cidade."
 	opening_time = 0.0
-	opening_hint = "Use as setas ou arraste o dedo para caminhar e explorar a cidade."
 	update_touch_controls_visibility()
 	update_memory_continue_button()
 
@@ -4012,6 +4023,12 @@ func draw_opening_intro() -> void:
 	draw_opening_intro_backdrop(viewport)
 	draw_opening_intro_road(viewport)
 	draw_opening_intro_sign()
+	draw_opening_camera_collectible()
+	if opening_memory_open:
+		draw_memory_card(viewport, null)
+		if opening_flash > 0.0:
+			draw_rect(Rect2(Vector2.ZERO, viewport), Color(1, 1, 1, opening_flash), true)
+		return
 	var mototaxi_pos := get_opening_intro_mototaxi_pos()
 	if player_pos.y < mototaxi_pos.y:
 		draw_player()
