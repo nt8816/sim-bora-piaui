@@ -1,0 +1,48 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.godot.game-mergeStandardDebugResources-18:/values-es-rES/values-es-rES.xml",
+            "map": [
+                {
+                    "source": "/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/godot/android/build/res/values-es-rES/godot_project_name_string.xml",
+                    "from": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "116",
+                        "endColumns": "68",
+                        "endOffsets": "180"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "68",
+                        "endOffsets": "119"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "/home/franciscora/.gradle/daemon/8.11.1/com.godot.game-mergeStandardDebugResources-18:/values-es-rES/values-es-rES.xml",
+            "map": [
+                {
+                    "source": "/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/godot/android/build/res/values-es-rES/godot_project_name_string.xml",
+                    "from": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "116",
+                        "endColumns": "78",
+                        "endOffsets": "190"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "78",
+                        "endOffsets": "129"
+                    }
+                }
+            ]
+        }
+    ]
+}
