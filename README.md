@@ -254,6 +254,8 @@ O build entregue para avaliação já está pronto em:
 Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk
 ```
 
+Observação: o APK Godot foi corrigido para manter o `assets/project.binary` íntegro dentro do pacote Android. Esse arquivo precisa bater com o `.pck` exportado; caso contrário, o app exibe o erro `Couldn't load project data at path "/"`.
+
 ### Compilar APK Kotlin
 
 Requisitos:
