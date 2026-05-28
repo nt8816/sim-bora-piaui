@@ -15,7 +15,7 @@ O MVP é funcional e validável: pode ser executado no Android, no Windows ou ab
 
 ## Equipe
 
-* Erika Tauane
+* Érika Tauane
 * Joyce Rodrigues
 * Tiago Araújo
 * Natan Araújo
