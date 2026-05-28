@@ -1,0 +1,10 @@
+#Thu May 28 10:18:04 BRT 2026
+base.0=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/monoDebug/mergeExtDexMonoDebug/classes.dex
+base.1=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/monoDebug/mergeProjectDexMonoDebug/0/classes.dex
+base.2=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/monoDebug/mergeProjectDexMonoDebug/6/classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=6/classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex

@@ -1,0 +1,26 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.godot.game-mergeMonoDebugResources-18:/values-es-rES/values-es-rES.xml",
+            "map": [
+                {
+                    "source": "/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/res/values-es-rES/godot_project_name_string.xml",
+                    "from": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "116",
+                        "endColumns": "78",
+                        "endOffsets": "190"
+                    },
+                    "to": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "78",
+                        "endOffsets": "129"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+#Thu May 28 10:18:04 BRT 2026
+base.0=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/instrumentedDebug/mergeExtDexInstrumentedDebug/classes.dex
+base.1=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/instrumentedDebug/mergeProjectDexInstrumentedDebug/0/classes.dex
+base.2=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/instrumentedDebug/mergeProjectDexInstrumentedDebug/3/classes.dex
+base.3=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/instrumentedDebug/mergeProjectDexInstrumentedDebug/5/classes.dex
+base.4=/home/franciscora/Documentos/sim-bora-piaui/Simbora-Piaui/builds/android-template/build/build/intermediates/dex/instrumentedDebug/mergeProjectDexInstrumentedDebug/6/classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=3/classes.dex
+path.3=5/classes.dex
+path.4=6/classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex
+renamed.3=classes4.dex
+renamed.4=classes5.dex

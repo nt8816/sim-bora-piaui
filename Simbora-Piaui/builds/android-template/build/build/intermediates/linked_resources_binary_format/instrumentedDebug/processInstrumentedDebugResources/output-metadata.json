@@ -1,0 +1,20 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "LINKED_RESOURCES_BINARY_FORMAT",
+    "kind": "Directory"
+  },
+  "applicationId": "org.godotengine.simbora.instrumented",
+  "variantName": "instrumentedDebug",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 1,
+      "versionName": "0.1.0-instrumented",
+      "outputFile": "linked-resources-binary-format-instrumentedDebug.ap_"
+    }
+  ],
+  "elementType": "File"
+}
