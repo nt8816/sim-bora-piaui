@@ -72,8 +72,6 @@ var opening_mototaxi_left_texture: Texture2D
 var opening_intro_mountain_texture: Texture2D
 var opening_intro_mototaxi_texture: Texture2D
 var opening_grass_tile_texture: Texture2D
-var market_stall_source_texture: Texture2D
-var market_stall_texture: Texture2D
 var feira_adaptada_texture: Texture2D = preload("res://assets/feira_adaptada.png")
 var feira_roupas_texture: Texture2D = preload("res://assets/feira_roupas_horizontal.png")
 var feira_bancas_texture: Texture2D = preload("res://assets/feira_bancas_horizontal.png")
@@ -116,7 +114,6 @@ var opening_intro_mototaxi_sprite := {}
 var opening_grass_tile_sprite := {}
 var camera_sprite := {}
 var seu_ze_sprite := {}
-var market_stall_sprites := []
 var feira_adaptada_sprite := {}
 var feira_roupas_sprite := {}
 var feira_bancas_sprite := {}
@@ -133,12 +130,9 @@ var player_size := Vector2(30, 40)
 var player_dir := "down"
 var walk_time := 0.0
 var camera_pos := Vector2.ZERO
-var opening_camera_x := 0.0
 var opening_active := false
 var opening_phase := "fade"
 var opening_time := 0.0
-var opening_player_x := -90.0
-var opening_player_y := 0.0
 var opening_memory_open := false
 var church_memory_open := false
 var fair_memory_open := false
@@ -753,49 +747,6 @@ func build_hero_frame_textures(source: Image, frames: Array) -> Array:
 
 
 
-func load_market_stall_sprites() -> void:
-	market_stall_sprites.clear()
-	if market_stall_source_texture == null:
-		return
-	var image := market_stall_source_texture.get_image()
-	if image == null:
-		return
-	image.convert(Image.FORMAT_RGBA8)
-	erase_flooded_dark_background(image)
-
-	var regions := [
-		{"rect": Rect2(14, 76, 136, 104), "width": 164.0},
-		{"rect": Rect2(174, 78, 134, 102), "width": 164.0},
-		{"rect": Rect2(15, 190, 136, 105), "width": 164.0},
-		{"rect": Rect2(174, 190, 134, 105), "width": 164.0},
-		{"rect": Rect2(14, 303, 138, 101), "width": 164.0},
-		{"rect": Rect2(174, 303, 136, 102), "width": 164.0},
-		{"rect": Rect2(14, 417, 139, 104), "width": 164.0},
-		{"rect": Rect2(174, 418, 136, 103), "width": 164.0},
-		{"rect": Rect2(359, 78, 137, 102), "width": 164.0},
-		{"rect": Rect2(517, 79, 134, 102), "width": 164.0},
-		{"rect": Rect2(704, 78, 136, 102), "width": 164.0},
-		{"rect": Rect2(865, 78, 135, 102), "width": 164.0},
-		{"rect": Rect2(1044, 78, 136, 101), "width": 164.0},
-		{"rect": Rect2(1205, 78, 136, 101), "width": 164.0},
-		{"rect": Rect2(14, 651, 138, 105), "width": 164.0},
-		{"rect": Rect2(174, 651, 137, 105), "width": 164.0},
-		{"rect": Rect2(359, 651, 138, 105), "width": 164.0},
-		{"rect": Rect2(518, 651, 137, 105), "width": 164.0},
-		{"rect": Rect2(704, 682, 292, 120), "width": 324.0},
-		{"rect": Rect2(704, 826, 292, 116), "width": 324.0},
-		{"rect": Rect2(704, 968, 292, 116), "width": 324.0},
-		{"rect": Rect2(1047, 650, 138, 106), "width": 164.0},
-		{"rect": Rect2(1206, 650, 137, 106), "width": 164.0},
-		{"rect": Rect2(1045, 973, 139, 104), "width": 164.0},
-		{"rect": Rect2(1206, 973, 137, 104), "width": 164.0}
-	]
-	for data in regions:
-		erase_region_dark_background(image, data["rect"])
-		market_stall_sprites.append(data)
-	market_stall_texture = ImageTexture.create_from_image(image)
-
-
 func erase_region_dark_background(image: Image, region: Rect2) -> void:
 	var min_x := maxi(0, int(region.position.x))
 	var min_y := maxi(0, int(region.position.y))
@@ -1360,17 +1311,8 @@ func get_church_plaza_spawn_pos() -> Vector2:
 	return Vector2(picos_church_tile) * TILE + Vector2(90, 220)
 
 
-func get_opening_spawn_pos() -> Vector2:
-	# Primeiro ponto jogável da estrada principal, antes do letreiro de Picos aparecer ao centro da tela.
-	return Vector2(2.4 * TILE, 26.5 * TILE)
-
-
 func get_opening_camera_pos() -> Vector2:
 	return OPENING_INTRO_SIGN_POS + Vector2(250, 28)
-
-
-func get_opening_mototaxi_pos() -> Vector2:
-	return get_opening_spawn_pos() + Vector2(290, 18)
 
 
 func get_seu_ze_pos() -> Vector2:
@@ -1404,14 +1346,7 @@ func update_opening(delta: float) -> void:
 			hint_panel.visible = false
 		return
 
-	if opening_phase == "fade":
-		player_dir = "right"
-		walk_time = 0.0
-		if opening_time >= 1.25:
-			opening_phase = "mototaxi"
-			opening_time = 0.0
-			opening_hint = "Fale com o motoboy para chegar ao começo da jornada."
-	elif opening_phase in ["mototaxi", "photo", "walk", "meet"]:
+	if opening_phase in ["walk", "meet"]:
 		var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		move += touch_vector
 		if touch_buttons.get("left", false):
@@ -1435,16 +1370,9 @@ func update_opening(delta: float) -> void:
 		else:
 			walk_time = 0.0
 
-		if opening_phase == "mototaxi":
-			var near_mototaxi := player_pos.distance_to(get_opening_mototaxi_pos()) < 88.0
-			opening_hint = "Aperte F para falar com o motoboy." if near_mototaxi else "Chegue perto do motoboy."
-		elif opening_phase == "photo":
-			var near_camera := player_pos.distance_to(get_opening_camera_pos()) < 58.0
-			opening_hint = "Aperte F para pegar a câmera." if near_camera else "Pegue a câmera no caminho."
-		else:
-			opening_ze_ready = player_pos.distance_to(get_seu_ze_pos()) < 125.0
-			opening_phase = "meet" if opening_ze_ready else "walk"
-			opening_hint = "Aperte F para falar com Seu Zé." if opening_ze_ready else "Siga a trilha das abelhas até a porta direita da igreja."
+		opening_ze_ready = player_pos.distance_to(get_seu_ze_pos()) < 125.0
+		opening_phase = "meet" if opening_ze_ready else "walk"
+		opening_hint = "Aperte F para falar com Seu Zé." if opening_ze_ready else "Siga a trilha das abelhas até a porta direita da igreja."
 
 	var viewport := get_viewport_rect().size
 	var target := player_pos - viewport / 2.0
@@ -1527,7 +1455,7 @@ func move_opening_intro_player(delta_pos: Vector2) -> void:
 func handle_opening_pointer(screen_pos: Vector2) -> bool:
 	if opening_memory_open:
 		return false
-	if opening_phase in [OPENING_INTRO_PHASE, "photo"] and not opening_camera_collected and get_opening_camera_collect_rect().has_point(screen_pos):
+	if opening_phase == OPENING_INTRO_PHASE and not opening_camera_collected and get_opening_camera_collect_rect().has_point(screen_pos):
 		collect_opening_camera()
 		return true
 	return false
@@ -1546,12 +1474,6 @@ func interact_opening() -> void:
 			start_mototaxi_dialog()
 		else:
 			opening_hint = "Pegue a câmera perto do letreiro ou chegue no mototáxi."
-		return
-	if opening_phase == "photo":
-		if player_pos.distance_to(get_opening_camera_pos()) < 58.0:
-			collect_opening_camera()
-		else:
-			opening_hint = "Chegue mais perto da câmera para pegar."
 		return
 	if opening_phase == "meet" and opening_ze_ready:
 		start_opening_script()
@@ -1644,10 +1566,6 @@ func play_camera_sound() -> void:
 		var env := maxf(0.0, 1.0 - t / 0.10)
 		var wave := 0.16 * env * (1.0 if sin(TAU * 720.0 * t) >= 0.0 else -1.0)
 		playback.push_frame(Vector2(wave, wave))
-
-
-func get_opening_ground_y() -> float:
-	return maxf(365.0, get_viewport_rect().size.y * 0.72)
 
 
 func get_camera_icon_rect() -> Rect2:
@@ -3688,31 +3606,11 @@ func get_seu_ze_fan_frame(visible_on_screen: bool) -> int:
 
 func draw_opening_map_guides() -> void:
 	var viewport := get_viewport_rect().size
-	if opening_phase == "fade":
-		draw_opening_appear_effect(viewport)
-	elif opening_memory_open:
-		draw_memory_card(viewport, null)
-	elif opening_phase == "mototaxi":
-		draw_opening_mototaxi()
-		draw_opening_hint(opening_hint, viewport)
-	elif opening_phase == "photo":
-		draw_opening_mototaxi()
-		draw_opening_camera_collectible()
-		draw_opening_hint(opening_hint, viewport)
-	elif opening_phase in ["walk", "meet"]:
+	if opening_phase in ["walk", "meet"]:
 		draw_bee_path_to_church()
 		draw_opening_hint(opening_hint, viewport)
 	if opening_flash > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, viewport), Color(1, 1, 1, opening_flash), true)
-
-
-func draw_opening_appear_effect(viewport: Vector2) -> void:
-	var screen_pos := player_pos - camera_pos
-	var progress := clampf(opening_time / 1.25, 0.0, 1.0)
-	for i in range(3):
-		var radius := 18.0 + progress * 54.0 + i * 18.0
-		draw_arc(screen_pos + Vector2(0, 14), radius, 0, TAU, 40, Color(1.0, 0.76, 0.28, (1.0 - progress) * (0.38 - i * 0.08)), 3.0)
-	draw_rect(Rect2(Vector2.ZERO, viewport), Color(0, 0, 0, 1.0 - progress), true)
 
 
 func draw_bee_path_to_church() -> void:
@@ -3727,180 +3625,6 @@ func draw_bee_path_to_church() -> void:
 		draw_circle(pos + Vector2(-3, -4), 3.0, Color(1, 1, 1, 0.24))
 		draw_circle(pos + Vector2(3, -4), 3.0, Color(1, 1, 1, 0.24))
 
-
-
-func draw_opening() -> void:
-	var viewport := get_viewport_rect().size
-	draw_opening_sky(viewport)
-	draw_opening_mountains(viewport)
-	draw_opening_street(viewport)
-	draw_opening_props()
-	draw_player_at(Vector2(opening_player_x - opening_camera_x, opening_player_y), player_dir, walk_time)
-	draw_opening_seu_ze()
-	draw_opening_ui(viewport)
-	draw_vignette()
-	if opening_phase == "fade":
-		var alpha := clampf(1.0 - opening_time / 2.4, 0.0, 1.0)
-		draw_rect(Rect2(Vector2.ZERO, viewport), Color(0, 0, 0, alpha), true)
-	if opening_flash > 0.0:
-		draw_rect(Rect2(Vector2.ZERO, viewport), Color(1, 1, 1, opening_flash), true)
-
-
-func opening_world_pos(x: float, y: float) -> Vector2:
-	return Vector2(x - opening_camera_x, y)
-
-
-func draw_opening_sky(viewport: Vector2) -> void:
-	draw_rect(Rect2(Vector2.ZERO, viewport), Color("#70c8ff"), true)
-	draw_rect(Rect2(Vector2(0, viewport.y * 0.52), Vector2(viewport.x, viewport.y * 0.48)), Color("#f5cf86"), true)
-	draw_opening_cloud(opening_world_pos(170, 92), 1.0)
-	draw_opening_cloud(opening_world_pos(780, 76), 0.8)
-	draw_opening_cloud(opening_world_pos(1380, 112), 0.95)
-
-
-func draw_opening_cloud(pos: Vector2, scale: float) -> void:
-	var color := Color(1, 1, 1, 0.9)
-	draw_circle(pos, 24 * scale, color)
-	draw_circle(pos + Vector2(28, -10) * scale, 32 * scale, color)
-	draw_circle(pos + Vector2(64, 0) * scale, 24 * scale, color)
-
-
-func draw_opening_mountains(viewport: Vector2) -> void:
-	var base := get_opening_ground_y() - 116.0
-	var points := PackedVector2Array()
-	points.append(opening_world_pos(0, viewport.y))
-	points.append(opening_world_pos(0, base))
-	for x in range(0, 2301, 120):
-		points.append(opening_world_pos(x + 70, base - 70.0 - sin(float(x) * 0.015) * 30.0))
-		points.append(opening_world_pos(x + 140, base))
-	points.append(opening_world_pos(2300, viewport.y))
-	draw_colored_polygon(points, Color("#5d9b69"))
-	draw_rect(Rect2(opening_world_pos(0, base + 20), Vector2(2300, 90)), Color("#3b7d55"), true)
-
-
-func draw_opening_street(viewport: Vector2) -> void:
-	var ground := get_opening_ground_y()
-	draw_rect(Rect2(opening_world_pos(0, ground - 18), Vector2(2300, viewport.y - ground + 18)), Color("#d6b16a"), true)
-	draw_rect(Rect2(opening_world_pos(0, ground + 18), Vector2(2300, 74)), Color("#7a7c78"), true)
-	for x in range(30, 2300, 150):
-		draw_rect(Rect2(opening_world_pos(x, ground + 50), Vector2(70, 8)), Color("#e7d69d"), true)
-
-
-func draw_opening_props() -> void:
-	var ground := get_opening_ground_y()
-	draw_opening_picos_sign(opening_world_pos(232, ground - 8))
-	draw_opening_tree(opening_world_pos(710, ground - 6))
-	draw_opening_poster(opening_world_pos(940, ground - 6))
-	draw_opening_sleeping_dog(opening_world_pos(1160, ground + 8))
-	draw_opening_bees()
-	draw_opening_church(opening_world_pos(1600, ground - 12))
-
-
-func draw_opening_picos_sign(pos: Vector2) -> void:
-	if picos_sign_texture:
-		var draw_w := 330.0
-		var draw_h := draw_w * (picos_sign_texture.get_height() / float(picos_sign_texture.get_width()))
-		draw_texture_rect(picos_sign_texture, Rect2(pos + Vector2(-48, -158), Vector2(draw_w, draw_h)), false)
-		return
-	draw_rect(Rect2(pos + Vector2(34, -70), Vector2(10, 70)), Color("#744325"), true)
-	draw_rect(Rect2(pos + Vector2(188, -70), Vector2(10, 70)), Color("#744325"), true)
-	draw_rect(Rect2(pos + Vector2(0, -120), Vector2(238, 58)), Color("#ffd45a"), true)
-	draw_rect(Rect2(pos + Vector2(0, -120), Vector2(238, 58)), Color("#2c4f87"), false, 5)
-	draw_string(ThemeDB.fallback_font, pos + Vector2(64, -82), "PICOS", HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("#2167a8"))
-
-
-func draw_opening_tree(pos: Vector2) -> void:
-	draw_rect(Rect2(pos + Vector2(-14, -98), Vector2(26, 98)), Color("#6d3f24"), true)
-	for i in range(8):
-		draw_circle(pos + Vector2(cos(i) * 36.0, -118.0 + sin(i * 1.7) * 18.0), 38, Color("#2f7b47"))
-
-
-func draw_opening_poster(pos: Vector2) -> void:
-	draw_rect(Rect2(pos + Vector2(0, -142), Vector2(10, 142)), Color("#4b3b31"), true)
-	draw_rect(Rect2(pos + Vector2(-42, -122), Vector2(92, 66)), Color("#f2d57c"), true)
-	draw_string(ThemeDB.fallback_font, pos + Vector2(-34, -96), "SAO JOAO", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color("#c43d32"))
-	draw_rect(Rect2(pos + Vector2(-34, -86), Vector2(54, 6)), Color("#2f78b7"), true)
-	draw_colored_polygon([pos + Vector2(18, -56), pos + Vector2(50, -56), pos + Vector2(18, -32)], Color("#8f6a42"))
-
-
-func draw_opening_sleeping_dog(pos: Vector2) -> void:
-	draw_rect(Rect2(pos + Vector2(-34, -28), Vector2(64, 24)), Color("#c9843d"), true)
-	draw_rect(Rect2(pos + Vector2(18, -42), Vector2(28, 24)), Color("#c9843d"), true)
-	draw_rect(Rect2(pos + Vector2(38, -36), Vector2(10, 18)), Color("#6b3d21"), true)
-	draw_rect(Rect2(pos + Vector2(34, -30), Vector2(4, 4)), Color("#2b1c15"), true)
-	draw_string(ThemeDB.fallback_font, pos + Vector2(-14, -46), "Zzz", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("#2b1c15"))
-
-
-func draw_opening_bees() -> void:
-	if opening_phase != "walk":
-		return
-	var ground := get_opening_ground_y()
-	for i in range(4):
-		var pos := opening_world_pos(560 + i * 230 + sin(opening_time * 2.4 + i) * 8.0, ground - 174.0 + sin(opening_time * 2.8 + i) * 8.0)
-		draw_circle(pos, 4.0, Color(1.0, 0.76, 0.25, 0.45))
-		draw_rect(Rect2(pos + Vector2(-1, -3), Vector2(2, 6)), Color(0.23, 0.11, 0.07, 0.32), true)
-		draw_circle(pos + Vector2(-3, -4), 3.0, Color(1, 1, 1, 0.24))
-		draw_circle(pos + Vector2(3, -4), 3.0, Color(1, 1, 1, 0.24))
-
-
-func draw_opening_church(pos: Vector2) -> void:
-	draw_rect(Rect2(pos + Vector2(-220, -78), Vector2(520, 92)), Color("#d9bb84"), true)
-	draw_rect(Rect2(pos + Vector2(0, -220), Vector2(170, 214)), Color("#f2efe4"), true)
-	draw_rect(Rect2(pos + Vector2(-54, -180), Vector2(50, 174)), Color("#f2efe4"), true)
-	draw_rect(Rect2(pos + Vector2(174, -180), Vector2(50, 174)), Color("#f2efe4"), true)
-	draw_rect(Rect2(pos + Vector2(26, -92), Vector2(54, 86)), Color("#c99b4a"), true)
-	draw_colored_polygon([pos + Vector2(0, -220), pos + Vector2(86, -292), pos + Vector2(170, -220)], Color("#d6a948"))
-	draw_colored_polygon([pos + Vector2(-60, -180), pos + Vector2(-28, -232), pos + Vector2(4, -180)], Color("#d6a948"))
-	draw_colored_polygon([pos + Vector2(168, -180), pos + Vector2(199, -232), pos + Vector2(230, -180)], Color("#d6a948"))
-	draw_rect(Rect2(pos + Vector2(-232, -28), Vector2(84, 14)), Color("#744325"), true)
-
-
-func draw_opening_seu_ze() -> void:
-	if opening_phase != "meet" and opening_player_x < 1390.0:
-		return
-	var ground := get_opening_ground_y()
-	var pos := opening_world_pos(1760, ground - 4)
-	draw_rect(Rect2(pos + Vector2(-86, -38), Vector2(154, 18)), Color("#744325"), true)
-	draw_rect(Rect2(pos + Vector2(-74, -26), Vector2(16, 42)), Color("#744325"), true)
-	draw_rect(Rect2(pos + Vector2(42, -26), Vector2(16, 42)), Color("#744325"), true)
-	draw_seu_ze_sprite(pos + Vector2(0, -18), 132.0)
-	if opening_phase == "meet":
-		draw_string(ThemeDB.fallback_font, pos + Vector2(-7, -174 + sin(opening_time * 5.0) * 5.0), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color("#ffc247"))
-
-
-func draw_opening_ui(viewport: Vector2) -> void:
-	if opening_memory_open:
-		draw_memory_card(viewport, null)
-		return
-	if opening_phase in ["mototaxi", "photo", "walk", "meet"]:
-		draw_opening_hint(opening_hint, viewport)
-
-
-func draw_opening_mototaxi() -> void:
-	var pos := get_opening_mototaxi_pos() - camera_pos
-	var bob := sin(opening_time * 4.0) * 1.5
-	if not opening_market_mototaxi_sprite.is_empty():
-		var sprite := opening_mototaxi_left_sprite if opening_mototaxi_turned_left and not opening_mototaxi_left_sprite.is_empty() else opening_market_mototaxi_sprite
-		var region: Rect2 = sprite["region"]
-		var draw_w := 118.0 if opening_mototaxi_turned_left else 106.0
-		var draw_h := draw_w * (region.size.y / region.size.x)
-		draw_ellipse_shadow(pos + Vector2(4, 27), Vector2(36, 5), 0.14)
-		if opening_mototaxi_turned_left:
-			draw_set_transform(pos, 0.0, Vector2(-1, 1))
-			draw_texture_rect_region(sprite["texture"], Rect2(Vector2(-draw_w * 0.48, -draw_h + 28.0 + bob), Vector2(draw_w, draw_h)), region)
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		else:
-			var target := Rect2(pos + Vector2(-draw_w * 0.53, -draw_h + 28.0 + bob), Vector2(draw_w, draw_h))
-			draw_texture_rect_region(sprite["texture"], target, region)
-	else:
-		draw_ellipse_shadow(pos + Vector2(4, 21), Vector2(58, 8), 0.16)
-		var base := pos + Vector2(0, bob)
-		draw_circle(base + Vector2(-38, 20), 15, Color("#1a1d22"))
-		draw_circle(base + Vector2(42, 20), 16, Color("#1a1d22"))
-		draw_line(base + Vector2(-34, 6), base + Vector2(14, -16), Color("#e0b339"), 7.0)
-		draw_line(base + Vector2(14, -16), base + Vector2(42, 8), Color("#e0b339"), 7.0)
-	if opening_phase == "mototaxi" and player_pos.distance_to(get_opening_mototaxi_pos()) < 88.0:
-		draw_string(ThemeDB.fallback_font, pos + Vector2(-7, -52 + sin(opening_time * 5.0) * 4.0), "F", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("#ffc247"))
 
 
 func draw_opening_camera_collectible() -> void:
@@ -4126,7 +3850,7 @@ func draw_opening_intro_sign() -> void:
 		draw_ellipse_shadow(pos + Vector2(120, 58), Vector2(190, 14), 0.12)
 		draw_texture_rect(picos_sign_texture, target, false)
 		return
-	draw_opening_picos_sign(pos)
+	draw_picos_sign(pos)
 
 
 func draw_opening_intro_mototaxi(pos: Vector2) -> void:
@@ -4664,16 +4388,6 @@ func draw_feira_adaptada(pos: Vector2) -> void:
 
 
 func draw_market_stall(pos: Vector2, variant: int) -> void:
-	if market_stall_texture and not market_stall_sprites.is_empty():
-		var data: Dictionary = market_stall_sprites[variant % market_stall_sprites.size()]
-		var region: Rect2 = data["rect"]
-		var draw_w: float = data["width"]
-		var draw_h := draw_w * (region.size.y / region.size.x)
-		draw_ellipse_shadow(pos + Vector2(TILE / 2.0, TILE + 4), Vector2(draw_w * 0.34, 8), 0.16)
-		var target := Rect2(pos + Vector2(TILE / 2.0 - draw_w / 2.0, TILE + 7 - draw_h), Vector2(draw_w, draw_h))
-		draw_texture_rect_region(market_stall_texture, target, region)
-		return
-
 	var canvas: Color = [Color("#f7f1df"), Color("#202225"), Color("#1f6ed4"), Color("#f7f1df")][variant % 4]
 	draw_ellipse_shadow(pos + Vector2(24, 43), Vector2(28, 6))
 	draw_rect(Rect2(pos + Vector2(6, 24), Vector2(36, 18)), Color("#8b5a36"))
