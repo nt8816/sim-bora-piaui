@@ -12,6 +12,7 @@ const FAIR_PHOTO_ID := "memoria_foto_feira_livre"
 const MUSEUM_PHOTO_ID := "memoria_foto_museu_ozildo"
 const PHASE1_ACCEPTED_ID := "fase1_diario_aceita"
 const PHASE1_DONE_ID := "fase1_diario_concluida"
+const CAPADOCIA_UNLOCKED_ID := "fase2_capadocia_liberada"
 const PAGE_FEIRA_ID := "pagina_diario_feira"
 const PAGE_MUSEU_ID := "pagina_diario_museu"
 const PAGE_FEIRA_RELEASED_ID := "pagina_diario_feira_liberada"
@@ -32,10 +33,11 @@ const SEU_ZE_FAN_FPS := 18.0
 const SEU_ZE_FAN_CROP_X_RATIO := 430.0 / 1950.0
 const SEU_ZE_FAN_CROP_WIDTH_RATIO := 1040.0 / 1950.0
 const OPENING_INTRO_PHASE := "intro_letreiro"
-const OPENING_INTRO_CAMERA_Y := 900.0
+const OPENING_INTRO_CAMERA_Y := 980.0
 const OPENING_INTRO_SIGN_POS := Vector2(432, 1104)
 const OPENING_INTRO_MOTOTAXI_POS := Vector2(1360, 1268)
 const OPENING_INTRO_WORLD_W := 1920.0
+const OPENING_INTRO_WORLD_BOTTOM_Y := 1720.0
 const OPENING_INTRO_MOUNTAIN_DRAW_W := 1260.0
 const OPENING_INTRO_MOUNTAIN_OFFSET := Vector2(-630, -660)
 const DONA_RITA_FRAME_COUNT := 61
@@ -87,6 +89,7 @@ var memory_polaroid_texture: Texture2D = preload("res://assets/memoria_picos_pol
 var church_memory_texture: Texture2D
 var fair_memory_texture: Texture2D
 var museum_memory_texture: Texture2D
+var capadocia_final_texture: Texture2D
 var opening_music_stream: AudioStream = preload("res://assets/audio_abertura_picos.mp3")
 var water_textures := [
 	preload("res://assets/agua_rio_2.jpeg")
@@ -148,6 +151,9 @@ var opening_script_active := false
 var opening_script_index := 0
 var phase1_reward_active := false
 var phase1_reward_index := 0
+var travel_map_active := false
+var travel_map_time := 0.0
+var capadocia_preview_active := false
 var opening_hint := "Toque no ícone para registrar sua primeira memória!"
 var opening_flash := 0.0
 var seu_ze_fan_started_msec := -1
@@ -238,15 +244,19 @@ var opening_mototaxi_lines := [
 var phase1_reward_lines := [
 	{
 		"speaker": "Seu Zé das Lendas",
-		"text": "Ah, meu jovem, você encontrou as páginas! Agora o Diário das Raízes pode respirar de novo."
+		"text": "Rapaz, você conseguiu! Com essas páginas, a história de Picos está a salvo. Deixe-me ver o que estava escrito nelas..."
 	},
 	{
 		"speaker": "Seu Zé das Lendas",
-		"text": "Aqui está o segredo: Picos cresceu como ponto de encontro, de passagem e de trabalho. Das estradas ao mel, muita gente ajudou a construir essa história."
+		"text": "Aqui fala de um lugar místico, bem pertinho da gente... Uma cidade de pedras gigantes e avermelhadas, esculpidas pelo vento e pelo tempo. Um lugar que parece ter saído de outro planeta!"
+	},
+	{
+		"speaker": "Jogador",
+		"text": "Pedras gigantes? Onde fica isso?"
 	},
 	{
 		"speaker": "Seu Zé das Lendas",
-		"text": "Receba este Marcador de Memórias. Ele vai lembrar você de olhar para cada canto com atenção. Fase 1 concluída!"
+		"text": "Fica em São José do Piauí, minha jovem águia! É a nossa famosa Capadócia Nordestina. Leve este amuleto de pedra com você, ele vai abrir os caminhos do mapa. Sim-Bora!"
 	}
 ]
 
@@ -255,6 +265,7 @@ var start_layer: CanvasLayer
 var dialog_panel: PanelContainer
 var dialog_title: Label
 var dialog_text: Label
+var dialog_continue_button: Button
 var answer_box: VBoxContainer
 var answer_scroll: ScrollContainer
 var dialog_full_text := ""
@@ -266,16 +277,19 @@ var place_label: Label
 var hint_label: Label
 var hint_panel: PanelContainer
 var bag_button: Button
+var settings_button: Button
 var collection_panel: PanelContainer
 var collection_list: VBoxContainer
 var collection_preview_panel: PanelContainer
 var collection_preview_image: TextureRect
+var menu_modal_layer: CanvasLayer
 var menu_modal: PanelContainer
 var menu_modal_title: Label
 var menu_modal_body: VBoxContainer
 var memory_continue_button: Button
 var touch_ui: Control
 var menu_root: Control
+var start_settings_button: Button
 var menu_hitbox_buttons := []
 var menu_highlights := []
 var character_buttons := {}
@@ -319,6 +333,8 @@ var dona_rita_quiz_questions := [
 
 func _ready() -> void:
 	get_window().min_size = Vector2i(480, 270)
+	get_window().size_changed.connect(apply_window_layout)
+	configure_mobile_window()
 	load_tree_sprites()
 	load_special_sprites()
 	load_menu_assets()
@@ -336,10 +352,35 @@ func _ready() -> void:
 	set_process(true)
 
 
+func configure_mobile_window() -> void:
+	if not is_mobile_build():
+		return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+	DisplayServer.window_set_size(DisplayServer.screen_get_size())
+
+
+func apply_window_layout() -> void:
+	if is_mobile_build():
+		configure_mobile_window()
+
+
+func is_mobile_build() -> bool:
+	return OS.has_feature("android") or OS.has_feature("ios")
+
+
+func mobile_ui_scale() -> float:
+	return 1.24 if is_mobile_build() else 1.0
+
+
 func _process(delta: float) -> void:
 	if not opening_active:
 		opening_flash = maxf(0.0, opening_flash - delta * 3.2)
 	update_dialog_typewriter(delta)
+	if travel_map_active or capadocia_preview_active:
+		update_travel_map(delta)
+		queue_redraw()
+		return
 	if running and not active_dialog and not collection_panel.visible and not church_memory_open and not fair_memory_open and not museum_memory_open:
 		if opening_active:
 			update_opening(delta)
@@ -353,6 +394,16 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if handle_dialog_option_shortcut(event):
 		return
+	if capadocia_preview_active:
+		if event is InputEventMouseButton and event.pressed:
+			capadocia_preview_active = false
+			return
+		if event.is_action_pressed("ui_cancel"):
+			capadocia_preview_active = false
+			return
+	if travel_map_active and event is InputEventMouseButton and event.pressed:
+		if handle_travel_map_pointer(event.position):
+			return
 	if opening_active and event is InputEventMouseButton and event.pressed:
 		if handle_opening_pointer(event.position):
 			return
@@ -419,15 +470,28 @@ func load_menu_assets() -> void:
 
 
 func load_png_texture(path: String) -> Texture2D:
+	var texture := load(path) as Texture2D
+	if texture != null:
+		return texture
 	var image := Image.new()
 	if image.load(path) != OK:
 		return null
 	return ImageTexture.create_from_image(image)
 
 
-func load_dark_background_png_texture(path: String) -> Texture2D:
+func load_image_asset(path: String) -> Image:
+	var texture := load(path) as Texture2D
+	if texture != null:
+		return texture.get_image()
 	var image := Image.new()
-	if image.load(path) != OK:
+	if image.load(path) == OK:
+		return image
+	return null
+
+
+func load_dark_background_png_texture(path: String) -> Texture2D:
+	var image := load_image_asset(path)
+	if image == null:
 		return null
 	image.convert(Image.FORMAT_RGBA8)
 	erase_flooded_dark_background(image)
@@ -435,8 +499,8 @@ func load_dark_background_png_texture(path: String) -> Texture2D:
 
 
 func load_light_background_png_texture(path: String) -> Texture2D:
-	var image := Image.new()
-	if image.load(path) != OK:
+	var image := load_image_asset(path)
+	if image == null:
 		return null
 	image.convert(Image.FORMAT_RGBA8)
 	erase_flooded_light_background(image)
@@ -444,8 +508,8 @@ func load_light_background_png_texture(path: String) -> Texture2D:
 
 
 func load_clean_icon_texture(path: String) -> Texture2D:
-	var image := Image.new()
-	if image.load(path) != OK:
+	var image := load_image_asset(path)
+	if image == null:
 		return null
 	image.convert(Image.FORMAT_RGBA8)
 	erase_soft_light_background(image)
@@ -673,6 +737,7 @@ func load_special_sprites() -> void:
 	church_memory_texture = load_light_background_png_texture("res://assets/memoria_igreja_matriz.png")
 	fair_memory_texture = load_light_background_png_texture("res://assets/memoria_feira_livre.png")
 	museum_memory_texture = load_light_background_png_texture("res://assets/memoria_museu_ozildo.png")
+	capadocia_final_texture = load_png_texture("res://assets/capadocia_em_breve.png")
 	seu_ze_fan_texture = load_png_texture("res://assets/seu_ze_abanando_120.png")
 	seu_ze_sprite = make_clean_sprite(seu_ze_texture, true)
 	water_sprites.clear()
@@ -1268,7 +1333,7 @@ func get_opening_intro_spawn_pos() -> Vector2:
 func get_opening_intro_camera_pos(viewport: Vector2, _focus_x: float) -> Vector2:
 	return Vector2(
 		0.0,
-		clampf(OPENING_INTRO_CAMERA_Y, WORLD_TOP_TILE * TILE, maxf(WORLD_TOP_TILE * TILE, WORLD_H * TILE - viewport.y))
+		clampf(OPENING_INTRO_CAMERA_Y, WORLD_TOP_TILE * TILE, maxf(WORLD_TOP_TILE * TILE, OPENING_INTRO_WORLD_BOTTOM_Y - viewport.y))
 	)
 
 
@@ -1278,12 +1343,12 @@ func get_opening_intro_mototaxi_pos() -> Vector2:
 
 func get_opening_intro_bounds() -> Rect2:
 	var viewport := get_viewport_rect().size
-	var top_margin := 108.0
-	var bottom_margin := 32.0
-	var side_margin := 26.0
+	var top_margin := 128.0
+	var bottom_margin := 74.0
+	var side_margin := 40.0
 	return Rect2(
-		Vector2(side_margin, camera_pos.y + top_margin),
-		Vector2(maxf(1.0, OPENING_INTRO_WORLD_W - side_margin * 2.0), maxf(1.0, viewport.y - top_margin - bottom_margin))
+		Vector2(camera_pos.x + side_margin, camera_pos.y + top_margin),
+		Vector2(maxf(1.0, viewport.x - side_margin * 2.0), maxf(1.0, viewport.y - top_margin - bottom_margin))
 	)
 
 
@@ -1500,6 +1565,7 @@ func advance_mototaxi_dialog() -> void:
 		dialog_typewriter_done = true
 		dialog_text.visible_characters = -1
 		answer_box.visible = true
+		update_dialog_continue_button()
 		return
 	opening_mototaxi_dialog_index += 1
 	show_mototaxi_dialog_line()
@@ -1981,8 +2047,11 @@ func interact_seu_ze_phase1() -> void:
 	if not learned.has(PHASE1_ACCEPTED_ID):
 		start_opening_script()
 		return
+	if learned.has(CAPADOCIA_UNLOCKED_ID):
+		start_travel_map_sequence()
+		return
 	if learned.has(PHASE1_DONE_ID):
-		show_dialog("Seu Zé das Lendas", "Você já recuperou o Diário das Raízes. Agora siga olhando Picos com carinho: cada canto ainda tem história para contar.", [])
+		start_travel_map_sequence()
 		return
 	if has_all_phase1_pages():
 		start_phase1_reward()
@@ -2105,7 +2174,46 @@ func finish_phase1_reward() -> void:
 	learned[PHASE1_DONE_ID] = true
 	save_progress()
 	update_hud()
-	show_dialog("Marcador de Memórias desbloqueado", "Item especial recebido: Marcador de Memórias. Caminho liberado para a próxima fase.", [])
+	start_travel_map_sequence()
+
+
+func start_travel_map_sequence() -> void:
+	close_dialog()
+	learned[PHASE1_DONE_ID] = true
+	learned[CAPADOCIA_UNLOCKED_ID] = true
+	travel_map_active = true
+	travel_map_time = 0.0
+	capadocia_preview_active = false
+	save_progress()
+	update_hud()
+	update_touch_controls_visibility()
+
+
+func update_travel_map(delta: float) -> void:
+	if travel_map_active:
+		travel_map_time = minf(travel_map_time + delta, 4.0)
+
+
+func handle_travel_map_pointer(screen_pos: Vector2) -> bool:
+	if not travel_map_active:
+		return false
+	if get_travel_map_destination_rect().has_point(screen_pos) and travel_map_time >= 2.65:
+		travel_map_active = false
+		capadocia_preview_active = true
+		return true
+	return true
+
+
+func get_travel_map_destination_rect() -> Rect2:
+	var viewport := get_viewport_rect().size
+	var map_rect := get_travel_map_rect(viewport)
+	var dest := map_rect.position + Vector2(map_rect.size.x * 0.72, map_rect.size.y * 0.42)
+	return Rect2(dest - Vector2(72, 72), Vector2(144, 144))
+
+
+func get_travel_map_rect(viewport: Vector2) -> Rect2:
+	var margin := Vector2(maxf(28.0, viewport.x * 0.08), maxf(26.0, viewport.y * 0.08))
+	return Rect2(margin, viewport - margin * 2.0)
 
 
 func open_dialog(title: String, text: String) -> void:
@@ -2118,6 +2226,7 @@ func open_dialog(title: String, text: String) -> void:
 	dialog_text.visible_characters = 0
 	configure_dialog_layout(text)
 	answer_box.visible = false
+	update_dialog_continue_button()
 	dialog_panel.visible = true
 	update_touch_controls_visibility()
 
@@ -2131,6 +2240,8 @@ func configure_dialog_layout(text: String) -> void:
 			longest_option = maxi(longest_option, String(child.text).length())
 
 	var viewport := get_viewport_rect().size
+	var mobile := is_mobile_build()
+	var ui_scale := mobile_ui_scale()
 	var text_len := text.length()
 	var width_ratio := 0.58
 	var chars_per_line := 44.0
@@ -2157,22 +2268,29 @@ func configure_dialog_layout(text: String) -> void:
 		width_ratio = 0.46
 		chars_per_line = 34.0
 
+	if mobile:
+		width_ratio = maxf(width_ratio, 0.82)
+		chars_per_line = maxf(chars_per_line, 62.0)
+		button_font = maxi(button_font, 16)
+		button_base = maxf(button_base, 54.0)
+
 	var explicit_lines := text.count("\n") + 1
 	var estimated_lines := maxi(explicit_lines, ceili(float(text_len) / chars_per_line))
-	var text_height := clampf(estimated_lines * 20.0 + 8.0, 38.0, viewport.y * 0.22)
+	var text_height := clampf(estimated_lines * 20.0 * ui_scale + 8.0, 38.0 * ui_scale, viewport.y * (0.32 if mobile else 0.22))
 	var options_height := 0.0
 	if option_count > 0:
 		options_height = option_count * button_base + maxi(0, option_count - 1) * 6.0
 		options_height = minf(options_height, viewport.y * 0.36)
 
-	var panel_width := clampf(viewport.x * width_ratio, 340.0, viewport.x - 36.0)
-	var panel_height := 10.0 + 26.0 + 6.0 + text_height + (7.0 if option_count > 0 else 0.0) + options_height + 10.0
-	panel_height = clampf(panel_height, 104.0, viewport.y * 0.52)
+	var continue_height := 54.0 if mobile and option_count == 0 else 0.0
+	var panel_width := clampf(viewport.x * width_ratio, 340.0, viewport.x - (24.0 if mobile else 36.0))
+	var panel_height := 10.0 + 26.0 * ui_scale + 6.0 + text_height + (7.0 if option_count > 0 else 0.0) + options_height + continue_height + 10.0
+	panel_height = clampf(panel_height, 128.0 if mobile else 104.0, viewport.y * (0.62 if mobile else 0.52))
 	dialog_panel.anchor_left = 0.0
 	dialog_panel.anchor_right = 0.0
 	dialog_panel.anchor_top = 0.0
 	dialog_panel.anchor_bottom = 0.0
-	dialog_panel.position = Vector2((viewport.x - panel_width) * 0.5, viewport.y - panel_height - 16.0)
+	dialog_panel.position = Vector2((viewport.x - panel_width) * 0.5, viewport.y - panel_height - (10.0 if mobile else 16.0))
 	dialog_panel.size = Vector2(panel_width, panel_height)
 	dialog_panel.custom_minimum_size = Vector2.ZERO
 	dialog_panel.offset_left = dialog_panel.position.x
@@ -2181,6 +2299,9 @@ func configure_dialog_layout(text: String) -> void:
 	dialog_panel.offset_bottom = dialog_panel.position.y + panel_height
 	dialog_panel.add_theme_stylebox_override("panel", get_dialog_panel_style(String(dialog_title.text), option_count))
 
+	dialog_title.add_theme_font_size_override("font_size", 20 if mobile else 17)
+	dialog_text.add_theme_font_size_override("font_size", 18 if mobile else 15)
+	dialog_text.add_theme_constant_override("line_spacing", 5 if mobile else 2)
 	dialog_text.custom_minimum_size = Vector2(0, text_height)
 	answer_scroll.custom_minimum_size = Vector2(0, options_height)
 	answer_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -2220,6 +2341,21 @@ func update_dialog_typewriter(delta: float) -> void:
 		dialog_typewriter_done = true
 		dialog_text.visible_characters = -1
 		answer_box.visible = true
+		update_dialog_continue_button()
+
+
+func update_dialog_continue_button() -> void:
+	if not dialog_continue_button:
+		return
+	var option_count := 0
+	if answer_box:
+		for child in answer_box.get_children():
+			if child is Button:
+				option_count += 1
+	dialog_continue_button.visible = is_mobile_build() and active_dialog and option_count == 0
+	dialog_continue_button.text = "Continuar" if dialog_typewriter_done else "Mostrar texto"
+	dialog_continue_button.custom_minimum_size = Vector2(0, 58 if is_mobile_build() else 48)
+	apply_gold_button_style(dialog_continue_button, 20 if is_mobile_build() else 17)
 
 
 func close_dialog() -> void:
@@ -2233,6 +2369,7 @@ func close_dialog() -> void:
 	dialog_text.visible_characters = -1
 	answer_box.visible = true
 	dialog_panel.visible = false
+	update_dialog_continue_button()
 	update_touch_controls_visibility()
 
 
@@ -2262,6 +2399,8 @@ func toggle_collection() -> void:
 	if bag_button:
 		bag_button.button_pressed = collection_panel.visible
 		bag_button.visible = not collection_panel.visible
+	if settings_button:
+		settings_button.visible = not collection_panel.visible
 	update_touch_controls_visibility()
 
 
@@ -2317,13 +2456,16 @@ func apply_settings() -> void:
 	if camera_sound_player:
 		camera_sound_player.volume_db = linear_to_db(maxf(float(settings["sfx_volume"]) / 100.0, 0.001))
 	update_touch_controls_visibility()
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if bool(settings["fullscreen"]) else DisplayServer.WINDOW_MODE_MAXIMIZED)
+	if is_mobile_build():
+		configure_mobile_window()
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if bool(settings["fullscreen"]) else DisplayServer.WINDOW_MODE_MAXIMIZED)
 
 
 func update_touch_controls_visibility() -> void:
 	if not touch_ui:
 		return
-	touch_ui.visible = bool(settings["touch_controls"]) and running and not active_dialog and not opening_memory_open and not church_memory_open and not fair_memory_open and not museum_memory_open and not collection_panel.visible
+	touch_ui.visible = bool(settings["touch_controls"]) and running and (not menu_modal or not menu_modal.visible) and not active_dialog and not opening_memory_open and not church_memory_open and not fair_memory_open and not museum_memory_open and not collection_panel.visible
 	if not touch_ui.visible:
 		touch_vector = Vector2.ZERO
 		touch_buttons.clear()
@@ -2335,6 +2477,8 @@ func update_memory_continue_button() -> void:
 		memory_continue_button.visible = memory_open
 	if bag_button:
 		bag_button.visible = not memory_open and (not collection_panel or not collection_panel.visible)
+	if settings_button:
+		settings_button.visible = not memory_open and (not collection_panel or not collection_panel.visible)
 
 
 func update_hud() -> void:
@@ -2434,11 +2578,13 @@ func build_ui() -> void:
 	hud.add_theme_constant_override("separation", 10)
 	hud_layer.add_child(hud)
 
-	place_label = make_label("Picos", 16)
-	score_label = make_label("Saberes 0/%d" % get_total_missions(), 16)
-	hud.add_child(wrap_panel(place_label, Vector2(240, 40)))
+	var hud_font := 20 if is_mobile_build() else 16
+	var hud_h := 58.0 if is_mobile_build() else 40.0
+	place_label = make_label("Picos", hud_font)
+	score_label = make_label("Saberes 0/%d" % get_total_missions(), hud_font)
+	hud.add_child(wrap_panel(place_label, Vector2(280 if is_mobile_build() else 240, hud_h)))
 	hud.add_spacer(false)
-	hud.add_child(wrap_panel(score_label, Vector2(170, 40)))
+	hud.add_child(wrap_panel(score_label, Vector2(230 if is_mobile_build() else 170, hud_h)))
 
 	hint_label = make_label("", 16)
 	hint_label.visible = false
@@ -2467,14 +2613,31 @@ func build_ui() -> void:
 	bag_button.disabled = false
 	bag_button.anchor_left = 1
 	bag_button.anchor_right = 1
-	bag_button.offset_left = -104
-	bag_button.offset_top = 54
+	var bag_size := 118.0 if is_mobile_build() else 88.0
+	bag_button.offset_left = -bag_size - 16.0
+	bag_button.offset_top = 62.0 if is_mobile_build() else 54.0
 	bag_button.offset_right = -16
-	bag_button.offset_bottom = 142
-	bag_button.custom_minimum_size = Vector2(88, 88)
+	bag_button.offset_bottom = bag_button.offset_top + bag_size
+	bag_button.custom_minimum_size = Vector2(bag_size, bag_size)
 	apply_gold_button_style(bag_button, 15)
 	bag_button.pressed.connect(toggle_collection)
 	hud_layer.add_child(bag_button)
+
+	settings_button = make_button("⚙")
+	settings_button.tooltip_text = "Configurações"
+	settings_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	settings_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	settings_button.anchor_left = 1
+	settings_button.anchor_right = 1
+	var settings_size := 58.0 if is_mobile_build() else 46.0
+	settings_button.offset_left = -settings_size - 16.0
+	settings_button.offset_top = bag_button.offset_bottom + 10.0
+	settings_button.offset_right = -16
+	settings_button.offset_bottom = settings_button.offset_top + settings_size
+	settings_button.custom_minimum_size = Vector2(settings_size, settings_size)
+	apply_gold_button_style(settings_button, 25 if is_mobile_build() else 20)
+	settings_button.pressed.connect(show_options_menu)
+	hud_layer.add_child(settings_button)
 
 	build_dialog_ui()
 	build_collection_ui()
@@ -2484,6 +2647,8 @@ func build_ui() -> void:
 	build_menu_modal()
 	if bag_button:
 		bag_button.move_to_front()
+	if settings_button:
+		settings_button.move_to_front()
 
 
 func build_start_ui() -> void:
@@ -2510,6 +2675,24 @@ func build_start_ui() -> void:
 	create_menu_image_button(Rect2(622, 544, 451, 93), menu_button_opcoes_texture, func(_button: Button): show_options_menu())
 	create_menu_image_button(Rect2(584, 629, 525, 116), menu_button_marketplace_texture, func(_button: Button): show_marketplace_menu())
 	create_character_selector()
+
+	start_settings_button = make_button("⚙")
+	start_settings_button.tooltip_text = "Configurações"
+	start_settings_button.anchor_left = 1
+	start_settings_button.anchor_top = 0
+	start_settings_button.anchor_right = 1
+	start_settings_button.anchor_bottom = 0
+	var gear_size := 62.0 if is_mobile_build() else 50.0
+	start_settings_button.offset_left = -gear_size - 18.0
+	start_settings_button.offset_top = 18.0
+	start_settings_button.offset_right = -18.0
+	start_settings_button.offset_bottom = 18.0 + gear_size
+	start_settings_button.custom_minimum_size = Vector2(gear_size, gear_size)
+	start_settings_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	apply_gold_button_style(start_settings_button, 27 if is_mobile_build() else 22)
+	start_settings_button.pressed.connect(show_options_menu)
+	menu_root.add_child(start_settings_button)
+
 	update_menu_hitboxes()
 
 
@@ -2669,24 +2852,54 @@ func start_journey(button: Button = null) -> void:
 	if opening_music_player and not opening_music_player.playing:
 		opening_music_player.play()
 	hint_label.visible = false
+	if settings_button:
+		settings_button.visible = true
 	if hint_panel:
 		hint_panel.visible = false
 	update_touch_controls_visibility()
 
 
+func return_to_start_panel() -> void:
+	close_menu_modal()
+	if collection_panel:
+		collection_panel.visible = false
+	if collection_preview_panel:
+		collection_preview_panel.visible = false
+	if dialog_panel:
+		dialog_panel.visible = false
+	active_dialog = false
+	running = false
+	touch_vector = Vector2.ZERO
+	touch_buttons.clear()
+	if start_layer:
+		start_layer.visible = true
+	if bag_button:
+		bag_button.button_pressed = false
+		bag_button.visible = false
+	if settings_button:
+		settings_button.visible = false
+	update_touch_controls_visibility()
+
+
 func build_menu_modal() -> void:
+	menu_modal_layer = CanvasLayer.new()
+	menu_modal_layer.layer = 40
+	add_child(menu_modal_layer)
+
 	menu_modal = PanelContainer.new()
 	menu_modal.visible = false
 	menu_modal.anchor_left = 0.5
 	menu_modal.anchor_top = 0.5
 	menu_modal.anchor_right = 0.5
 	menu_modal.anchor_bottom = 0.5
-	menu_modal.offset_left = -320
-	menu_modal.offset_top = -205
-	menu_modal.offset_right = 320
-	menu_modal.offset_bottom = 205
+	var modal_w := 780.0 if is_mobile_build() else 640.0
+	var modal_h := 460.0 if is_mobile_build() else 410.0
+	menu_modal.offset_left = -modal_w * 0.5
+	menu_modal.offset_top = -modal_h * 0.5
+	menu_modal.offset_right = modal_w * 0.5
+	menu_modal.offset_bottom = modal_h * 0.5
 	menu_modal.add_theme_stylebox_override("panel", make_panel_style(Color(0.23, 0.11, 0.055, 0.97), Color("#ffc247")))
-	start_layer.add_child(menu_modal)
+	menu_modal_layer.add_child(menu_modal)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 18)
@@ -2711,7 +2924,7 @@ func build_menu_modal() -> void:
 	header.add_child(close)
 
 	menu_modal_body = VBoxContainer.new()
-	menu_modal_body.custom_minimum_size = Vector2(600, 270)
+	menu_modal_body.custom_minimum_size = Vector2(720 if is_mobile_build() else 600, 320 if is_mobile_build() else 270)
 	menu_modal_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	menu_modal_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	menu_modal_body.add_theme_constant_override("separation", 4)
@@ -2723,11 +2936,14 @@ func open_menu_modal(title: String) -> void:
 	for child in menu_modal_body.get_children():
 		child.queue_free()
 	menu_modal.visible = true
+	menu_modal.move_to_front()
+	update_touch_controls_visibility()
 
 
 func close_menu_modal() -> void:
 	if menu_modal:
 		menu_modal.visible = false
+	update_touch_controls_visibility()
 
 
 func show_options_menu() -> void:
@@ -2737,14 +2953,24 @@ func show_options_menu() -> void:
 	add_options_slider("Volume dos efeitos", "sfx_volume", 0, 100)
 	add_options_choice("Dificuldade", "difficulty", {"Fácil": "easy", "Normal": "normal", "Difícil": "hard"})
 	add_options_toggle("Controles de toque", "touch_controls")
-	add_options_toggle("Tela cheia", "fullscreen")
+	if not is_mobile_build():
+		add_options_toggle("Tela cheia", "fullscreen")
 
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 8)
-	actions.custom_minimum_size = Vector2(0, 34)
+	actions.custom_minimum_size = Vector2(0, 48 if is_mobile_build() else 34)
 	menu_modal_body.add_child(actions)
+	if running:
+		var resume := make_button("Continuar jogo")
+		resume.custom_minimum_size = Vector2(160 if is_mobile_build() else 130, 48 if is_mobile_build() else 34)
+		resume.pressed.connect(close_menu_modal)
+		actions.add_child(resume)
+		var panel := make_button("Voltar ao painel")
+		panel.custom_minimum_size = Vector2(180 if is_mobile_build() else 150, 48 if is_mobile_build() else 34)
+		panel.pressed.connect(return_to_start_panel)
+		actions.add_child(panel)
 	var reset := make_button("Zerar progresso")
-	reset.custom_minimum_size = Vector2(150, 34)
+	reset.custom_minimum_size = Vector2(170 if is_mobile_build() else 150, 48 if is_mobile_build() else 34)
 	reset.pressed.connect(func():
 		learned.clear()
 		redeemed.clear()
@@ -2755,7 +2981,7 @@ func show_options_menu() -> void:
 	)
 	actions.add_child(reset)
 	var defaults := make_button("Padrão")
-	defaults.custom_minimum_size = Vector2(100, 34)
+	defaults.custom_minimum_size = Vector2(120 if is_mobile_build() else 100, 48 if is_mobile_build() else 34)
 	defaults.pressed.connect(func():
 		settings["music_volume"] = 70.0
 		settings["sfx_volume"] = 80.0
@@ -2771,16 +2997,23 @@ func show_options_menu() -> void:
 
 func add_options_slider(title: String, key: String, min_value: float, max_value: float) -> void:
 	var row := make_options_row(title)
-	var value_label := make_label("%d%%" % int(settings[key]), 16)
+	var value_label := make_label("%d%%" % int(settings[key]), 19 if is_mobile_build() else 16)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value_label.custom_minimum_size = Vector2(52, 0)
+	value_label.custom_minimum_size = Vector2(58, 0)
 	row.add_child(value_label)
+
+	var minus := make_button("-")
+	minus.tooltip_text = "Diminuir volume"
+	minus.custom_minimum_size = Vector2(50 if is_mobile_build() else 36, 48 if is_mobile_build() else 32)
+	apply_gold_button_style(minus, 22 if is_mobile_build() else 18)
+	row.add_child(minus)
+
 	var slider := HSlider.new()
 	slider.min_value = min_value
 	slider.max_value = max_value
 	slider.step = 1
 	slider.value = float(settings[key])
-	slider.custom_minimum_size = Vector2(220, 30)
+	slider.custom_minimum_size = Vector2(240 if is_mobile_build() else 190, 48 if is_mobile_build() else 30)
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.value_changed.connect(func(value: float):
 		settings[key] = value
@@ -2790,6 +3023,15 @@ func add_options_slider(title: String, key: String, min_value: float, max_value:
 	)
 	row.add_child(slider)
 
+	var plus := make_button("+")
+	plus.tooltip_text = "Aumentar volume"
+	plus.custom_minimum_size = Vector2(50 if is_mobile_build() else 36, 48 if is_mobile_build() else 32)
+	apply_gold_button_style(plus, 22 if is_mobile_build() else 18)
+	row.add_child(plus)
+
+	minus.pressed.connect(func(): slider.value = clampf(slider.value - 5.0, min_value, max_value))
+	plus.pressed.connect(func(): slider.value = clampf(slider.value + 5.0, min_value, max_value))
+
 
 func add_options_choice(title: String, key: String, options: Dictionary) -> void:
 	var row := make_options_row(title)
@@ -2797,7 +3039,7 @@ func add_options_choice(title: String, key: String, options: Dictionary) -> void
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
 	var option := OptionButton.new()
-	option.custom_minimum_size = Vector2(180, 34)
+	option.custom_minimum_size = Vector2(230 if is_mobile_build() else 180, 48 if is_mobile_build() else 34)
 	var index := 0
 	var selected := 0
 	for label in options:
@@ -2821,7 +3063,7 @@ func add_options_toggle(title: String, key: String) -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
 	var check := CheckButton.new()
-	check.custom_minimum_size = Vector2(135, 34)
+	check.custom_minimum_size = Vector2(160 if is_mobile_build() else 135, 48 if is_mobile_build() else 34)
 	check.text = "Ligado" if bool(settings[key]) else "Desligado"
 	check.button_pressed = bool(settings[key])
 	check.toggled.connect(func(pressed: bool):
@@ -2835,14 +3077,14 @@ func add_options_toggle(title: String, key: String) -> void:
 
 func make_options_row(title: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(0, 38)
+	row.custom_minimum_size = Vector2(0, 52 if is_mobile_build() else 38)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
 	menu_modal_body.add_child(row)
-	var label := make_label(title, 16)
+	var label := make_label(title, 19 if is_mobile_build() else 16)
 	label.add_theme_color_override("font_color", Color("#ffe6a7"))
-	label.custom_minimum_size = Vector2(220, 0)
+	label.custom_minimum_size = Vector2(230 if is_mobile_build() else 220, 0)
 	row.add_child(label)
 	return row
 
@@ -3023,6 +3265,13 @@ func build_dialog_ui() -> void:
 	answer_box.add_theme_constant_override("separation", 6)
 	answer_scroll.add_child(answer_box)
 
+	dialog_continue_button = make_button("Continuar")
+	dialog_continue_button.visible = false
+	dialog_continue_button.custom_minimum_size = Vector2(0, 48)
+	apply_gold_button_style(dialog_continue_button, 17)
+	dialog_continue_button.pressed.connect(advance_or_close_dialog)
+	box.add_child(dialog_continue_button)
+
 
 func make_typewriter_font() -> Font:
 	var font := SystemFont.new()
@@ -3149,17 +3398,21 @@ func build_touch_ui() -> void:
 	touch_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(touch_ui)
 
+	var touch_unit := 64.0 if is_mobile_build() else 50.0
+	var touch_gap := 8 if is_mobile_build() else 5
+	var dpad_size := touch_unit * 3.0 + float(touch_gap * 2)
+
 	var dpad := GridContainer.new()
 	dpad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dpad.columns = 3
 	dpad.anchor_top = 1
 	dpad.anchor_bottom = 1
 	dpad.offset_left = 22
-	dpad.offset_top = -166
-	dpad.offset_right = 184
+	dpad.offset_top = -dpad_size - 18.0
+	dpad.offset_right = 22.0 + dpad_size
 	dpad.offset_bottom = -18
-	dpad.add_theme_constant_override("h_separation", 5)
-	dpad.add_theme_constant_override("v_separation", 5)
+	dpad.add_theme_constant_override("h_separation", touch_gap)
+	dpad.add_theme_constant_override("v_separation", touch_gap)
 	touch_ui.add_child(dpad)
 
 	add_pad_space(dpad)
@@ -3178,8 +3431,9 @@ func build_touch_ui() -> void:
 	action.anchor_top = 1
 	action.anchor_right = 1
 	action.anchor_bottom = 1
-	action.offset_left = -104
-	action.offset_top = -106
+	var action_size := 104.0 if is_mobile_build() else 82.0
+	action.offset_left = -action_size - 22.0
+	action.offset_top = -action_size - 24.0
 	action.offset_right = -22
 	action.offset_bottom = -24
 	apply_action_button_style(action)
@@ -3194,18 +3448,21 @@ func build_memory_continue_ui() -> void:
 	memory_continue_button.anchor_top = 1
 	memory_continue_button.anchor_right = 1
 	memory_continue_button.anchor_bottom = 1
-	memory_continue_button.offset_left = -168
-	memory_continue_button.offset_top = -72
+	var continue_w := 190.0 if is_mobile_build() else 140.0
+	var continue_h := 62.0 if is_mobile_build() else 48.0
+	memory_continue_button.offset_left = -continue_w - 28.0
+	memory_continue_button.offset_top = -continue_h - 24.0
 	memory_continue_button.offset_right = -28
 	memory_continue_button.offset_bottom = -24
-	apply_gold_button_style(memory_continue_button, 18)
+	apply_gold_button_style(memory_continue_button, 22 if is_mobile_build() else 18)
 	memory_continue_button.pressed.connect(close_current_memory_card)
 	hud_layer.add_child(memory_continue_button)
 
 
 func add_touch_button(parent: GridContainer, action_name: String, text: String) -> void:
 	var button := make_button(text)
-	button.custom_minimum_size = Vector2(50, 50)
+	var unit := 64.0 if is_mobile_build() else 50.0
+	button.custom_minimum_size = Vector2(unit, unit)
 	apply_touch_button_style(button)
 	button.button_down.connect(func(): touch_buttons[action_name] = true)
 	button.button_up.connect(func(): touch_buttons[action_name] = false)
@@ -3214,7 +3471,8 @@ func add_touch_button(parent: GridContainer, action_name: String, text: String) 
 
 func add_pad_space(parent: GridContainer) -> void:
 	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(50, 50)
+	var unit := 64.0 if is_mobile_build() else 50.0
+	spacer.custom_minimum_size = Vector2(unit, unit)
 	parent.add_child(spacer)
 
 
@@ -3239,6 +3497,8 @@ func make_button(text: String) -> Button:
 		button_height = 46.0
 	elif text.length() > 42:
 		button_height = 36.0
+	if is_mobile_build():
+		button_height = maxf(button_height, 44.0)
 	button.custom_minimum_size = Vector2(0, button_height)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.add_theme_font_size_override("font_size", 13)
@@ -3265,7 +3525,7 @@ func apply_dialog_button_style(button: Button) -> void:
 
 
 func apply_touch_button_style(button: Button) -> void:
-	button.add_theme_font_size_override("font_size", 22)
+	button.add_theme_font_size_override("font_size", 30 if is_mobile_build() else 22)
 	button.add_theme_color_override("font_color", Color("#fff7dc"))
 	button.add_theme_color_override("font_hover_color", Color("#fff7dc"))
 	button.add_theme_color_override("font_pressed_color", Color("#241306"))
@@ -3275,7 +3535,7 @@ func apply_touch_button_style(button: Button) -> void:
 
 
 func apply_action_button_style(button: Button) -> void:
-	button.add_theme_font_size_override("font_size", 26)
+	button.add_theme_font_size_override("font_size", 34 if is_mobile_build() else 26)
 	button.add_theme_color_override("font_color", Color("#fff7dc"))
 	button.add_theme_color_override("font_hover_color", Color("#fff7dc"))
 	button.add_theme_color_override("font_pressed_color", Color("#fff7dc"))
@@ -3421,7 +3681,127 @@ func wrap_panel(child: Control, size: Vector2) -> PanelContainer:
 	return panel
 
 
+func draw_capadocia_preview() -> void:
+	var viewport := get_viewport_rect().size
+	draw_rect(Rect2(Vector2.ZERO, viewport), Color("#05080d"), true)
+	if capadocia_final_texture:
+		var texture_size := capadocia_final_texture.get_size()
+		var scale := maxf(viewport.x / texture_size.x, viewport.y / texture_size.y)
+		var draw_size := texture_size * scale
+		var draw_pos := (viewport - draw_size) * 0.5
+		draw_texture_rect(capadocia_final_texture, Rect2(draw_pos, draw_size), false)
+	var font := ThemeDB.fallback_font
+	var hint := "Clique para voltar ao mapa de Picos"
+	var hint_size := 30
+	var text_size := font.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hint_size)
+	var panel := Rect2(Vector2((viewport.x - text_size.x) * 0.5 - 28, viewport.y - 88), Vector2(text_size.x + 56, 52))
+	draw_rect(panel, Color(0.05, 0.04, 0.03, 0.72), true)
+	draw_rect(panel, Color("#f6c55a"), false, 3)
+	draw_string(font, panel.position + Vector2(28, 36), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hint_size, Color("#fff3c7"))
+
+
+func draw_travel_map_overlay() -> void:
+	var viewport := get_viewport_rect().size
+	draw_rect(Rect2(Vector2.ZERO, viewport), Color(0.02, 0.015, 0.01, 0.78), true)
+	var map_rect := get_travel_map_rect(viewport)
+	draw_travel_map_texture(map_rect)
+	var start := map_rect.position + Vector2(map_rect.size.x * 0.28, map_rect.size.y * 0.58)
+	var finish := map_rect.position + Vector2(map_rect.size.x * 0.72, map_rect.size.y * 0.42)
+	var route_progress := clampf((travel_map_time - 0.55) / 1.85, 0.0, 1.0)
+	var reveal_progress := clampf((travel_map_time - 2.25) / 0.65, 0.0, 1.0)
+	draw_travel_map_route(start, finish, route_progress)
+	draw_travel_map_city(start, "Picos", 1.0)
+	if reveal_progress > 0.0:
+		draw_travel_map_pin(finish, reveal_progress)
+		var font := ThemeDB.fallback_font
+		var label := "São José do Piauí - Capadócia Nordestina"
+		var label_size := 28
+		var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, label_size)
+		var label_pos := finish + Vector2(-text_size.x * 0.5, 86)
+		draw_string(font, label_pos, label, HORIZONTAL_ALIGNMENT_LEFT, -1, label_size, Color("#3b2412"))
+		if travel_map_time >= 2.65:
+			var button_rect := get_travel_map_destination_rect()
+			var pulse := 0.55 + sin(Time.get_ticks_msec() / 170.0) * 0.18
+			draw_arc(button_rect.get_center(), 58, 0, TAU, 48, Color(1.0, 0.78, 0.18, pulse), 5)
+	var title := "Novo destino desbloqueado"
+	var font := ThemeDB.fallback_font
+	draw_string(font, map_rect.position + Vector2(42, 64), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 38, Color("#3b2412"))
+	var instruction := "Toque no pino para iniciar a próxima jornada."
+	draw_string(font, map_rect.position + Vector2(42, map_rect.size.y - 42), instruction, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#5a3a1f"))
+
+
+func draw_travel_map_texture(map_rect: Rect2) -> void:
+	draw_rect(map_rect.grow(10), Color(0.16, 0.08, 0.03, 0.85), true)
+	draw_rect(map_rect, Color("#ead59f"), true)
+	draw_rect(map_rect, Color("#8f5d2e"), false, 5)
+	var step := maxf(52.0, map_rect.size.x / 16.0)
+	var x := map_rect.position.x + step
+	while x < map_rect.end.x - step:
+		draw_line(Vector2(x, map_rect.position.y + 28), Vector2(x, map_rect.end.y - 28), Color(0.72, 0.48, 0.23, 0.18), 2)
+		x += step
+	var y := map_rect.position.y + step
+	while y < map_rect.end.y - step:
+		draw_line(Vector2(map_rect.position.x + 28, y), Vector2(map_rect.end.x - 28, y), Color(0.72, 0.48, 0.23, 0.18), 2)
+		y += step
+	var river := PackedVector2Array([
+		map_rect.position + Vector2(map_rect.size.x * 0.12, map_rect.size.y * 0.28),
+		map_rect.position + Vector2(map_rect.size.x * 0.32, map_rect.size.y * 0.36),
+		map_rect.position + Vector2(map_rect.size.x * 0.48, map_rect.size.y * 0.30),
+		map_rect.position + Vector2(map_rect.size.x * 0.64, map_rect.size.y * 0.38),
+		map_rect.position + Vector2(map_rect.size.x * 0.86, map_rect.size.y * 0.32)
+	])
+	draw_polyline(river, Color("#5fb6cf"), 18)
+	draw_polyline(river, Color("#c9f1e7"), 5)
+	for i in range(9):
+		var ridge_x := map_rect.position.x + map_rect.size.x * (0.12 + i * 0.09)
+		var base_y := map_rect.position.y + map_rect.size.y * (0.72 + sin(i * 1.7) * 0.07)
+		var pts := PackedVector2Array([Vector2(ridge_x - 28, base_y), Vector2(ridge_x, base_y - 62), Vector2(ridge_x + 32, base_y)])
+		draw_colored_polygon(pts, Color("#b55f2b"))
+		draw_polyline(pts, Color("#6b351c"), 3)
+
+
+func draw_travel_map_route(start: Vector2, finish: Vector2, progress: float) -> void:
+	if progress <= 0.0:
+		return
+	var c1 := start + Vector2(130, -118)
+	var c2 := finish + Vector2(-170, 138)
+	var points := PackedVector2Array()
+	var steps: int = maxi(2, int(34 * progress))
+	for i in range(steps + 1):
+		var t := float(i) / 34.0
+		if t > progress:
+			t = progress
+		points.append(travel_map_cubic_bezier(start, c1, c2, finish, t))
+	draw_polyline(points, Color("#5c2e16"), 7)
+	draw_polyline(points, Color("#fff0a8"), 3)
+
+
+func travel_map_cubic_bezier(a: Vector2, b: Vector2, c: Vector2, d: Vector2, t: float) -> Vector2:
+	var omt := 1.0 - t
+	return a * omt * omt * omt + b * 3.0 * omt * omt * t + c * 3.0 * omt * t * t + d * t * t * t
+
+
+func draw_travel_map_city(pos: Vector2, label: String, glow: float) -> void:
+	var pulse := 1.0 + sin(Time.get_ticks_msec() / 180.0) * 0.08 * glow
+	draw_circle(pos, 26.0 * pulse, Color(1.0, 0.82, 0.22, 0.28))
+	draw_circle(pos, 13, Color("#d43f2f"))
+	draw_circle(pos, 6, Color("#fff2b0"))
+	draw_string(ThemeDB.fallback_font, pos + Vector2(-36, -28), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#3b2412"))
+
+
+func draw_travel_map_pin(pos: Vector2, progress: float) -> void:
+	var drop_y := (1.0 - progress) * -150.0
+	var p := pos + Vector2(0, drop_y)
+	draw_circle(p, 28, Color("#cc352c"))
+	draw_circle(p, 12, Color("#fff1c4"))
+	var tip := PackedVector2Array([p + Vector2(-13, 18), p + Vector2(13, 18), p + Vector2(0, 55)])
+	draw_colored_polygon(tip, Color("#cc352c"))
+
+
 func _draw() -> void:
+	if capadocia_preview_active:
+		draw_capadocia_preview()
+		return
 	if opening_active and opening_phase == OPENING_INTRO_PHASE:
 		draw_opening_intro()
 		draw_vignette()
@@ -3446,6 +3826,10 @@ func _draw() -> void:
 		draw_memory_card(get_viewport_rect().size, museum_memory_texture)
 	if (church_memory_open or fair_memory_open or museum_memory_open) and opening_flash > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color(1, 1, 1, opening_flash), true)
+	if travel_map_active:
+		draw_travel_map_overlay()
+		draw_vignette()
+		return
 	draw_vignette()
 
 
@@ -3663,12 +4047,12 @@ func draw_camera_icon() -> void:
 
 
 func draw_opening_hint(text: String, viewport: Vector2) -> void:
-	var font_size := 18
+	var font_size := 22 if is_mobile_build() else 18
 	var rect := get_opening_hint_rect(viewport, text, font_size)
 	draw_rect(rect, Color(0.62, 0.38, 0.16, 0.58), true)
 	draw_rect(rect, Color("#ffc247"), false, 3.0)
 	var lines := wrap_hint_text(text, rect.size.x - 36.0, font_size)
-	var line_height := 22.0
+	var line_height := 27.0 if is_mobile_build() else 22.0
 	var total_h := lines.size() * line_height
 	var start_y := rect.position.y + (rect.size.y - total_h) * 0.5 + 17.0
 	for i in range(lines.size()):
@@ -3676,16 +4060,16 @@ func draw_opening_hint(text: String, viewport: Vector2) -> void:
 
 
 func get_opening_hint_rect(viewport: Vector2, text: String, font_size: int) -> Rect2:
-	var width := minf(620.0, viewport.x - 28.0)
+	var width := minf(760.0 if is_mobile_build() else 620.0, viewport.x - 28.0)
 	var x := (viewport.x - width) / 2.0
 	if touch_ui and touch_ui.visible:
-		var left := 304.0
-		var right := viewport.x - 228.0
+		var left := 344.0 if is_mobile_build() else 304.0
+		var right := viewport.x - (270.0 if is_mobile_build() else 228.0)
 		if right - left >= 260.0:
 			width = right - left
 			x = left
 	var lines := wrap_hint_text(text, width - 36.0, font_size)
-	var height := 54.0 if lines.size() <= 1 else 74.0
+	var height := (68.0 if is_mobile_build() else 54.0) if lines.size() <= 1 else (92.0 if is_mobile_build() else 74.0)
 	var y := viewport.y - height - 34.0
 	return Rect2(Vector2(x, y), Vector2(width, height))
 

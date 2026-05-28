@@ -23,9 +23,11 @@ config/icon="res://assets/logo_simbora.png"
 
 window/size/viewport_width=960
 window/size/viewport_height=540
+window/handheld/orientation=0
 window/size/mode=3
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/stretch/scale_mode="fractional"
 
 [input]
 
@@ -67,5 +69,5 @@ open_collection={
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
