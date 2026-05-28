@@ -7,7 +7,8 @@ O MVP é funcional e validável: pode ser executado no Android, no Windows ou ab
 ## Links rápidos
 
 * Repositório: [https://github.com/nt8816/sim-bora-piaui](https://github.com/nt8816/sim-bora-piaui)
-* APK Android: [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk)
+* APK Android Kotlin: [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk)
+* APK Android Godot: [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk)
 * Executável Windows: [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe)
 * Projeto Godot: [`Simbora-Piaui/godot/project.godot`](Simbora-Piaui/godot/project.godot)
 
@@ -61,6 +62,9 @@ Esta versão demonstra a primeira etapa da jornada:
 
 * Godot Engine 4.6.2
 * GDScript
+* Kotlin
+* Android WebView
+* Gradle / Android Gradle Plugin
 * Android SDK / Build Tools 35
 * Java 17
 * Git e GitHub
@@ -75,14 +79,20 @@ Esta versão demonstra a primeira etapa da jornada:
 
 ### Android
 
-1. Baixe o APK pelo link:
-   [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk)
+1. Baixe o APK Kotlin pelo link:
+   [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk)
 2. Transfira o arquivo para o celular, se estiver baixando pelo computador.
 3. No Android, permita a instalação de app de fonte externa quando o sistema solicitar.
 4. Instale o APK.
 5. Abra o app `Sim-Bora Piauí`.
 
 Arquivo no repositório:
+
+```text
+Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk
+```
+
+Também existe o APK exportado pelo Godot:
 
 ```text
 Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk
@@ -148,6 +158,8 @@ Simbora-Piaui/style.css
 
 Esse protótipo serve como referência visual e de experimentação. A versão principal do MVP, para avaliação técnica, é a versão Godot.
 
+O APK Kotlin usa esse protótipo web empacotado em um app Android nativo com `WebView`, mantendo os assets locais dentro do aplicativo.
+
 ## Como jogar
 
 * No computador: use `WASD` ou as setas para andar.
@@ -172,6 +184,10 @@ Simbora-Piaui/
   index.html
   game.js
   style.css
+android-kotlin/
+  app/src/main/java/br/com/simbora/piaui/MainActivity.kt
+  app/build.gradle
+  settings.gradle
 ```
 
 ## Arquitetura da solução
@@ -190,6 +206,9 @@ flowchart TD
     C --> K[Assets 2D e áudio]
     C --> L[Exportação Android APK]
     C --> M[Exportação Windows EXE]
+    N[Projeto Kotlin Android] --> O[WebView em tela cheia]
+    O --> P[Protótipo web e assets locais]
+    N --> Q[APK Kotlin]
 ```
 
 ### Componentes principais
@@ -200,6 +219,7 @@ flowchart TD
 * `assets/`: imagens, sprites, texturas e áudio usados no jogo.
 * `builds/android/`: APK Android pronto para teste.
 * `builds/windows/`: executável Windows pronto para teste.
+* `android-kotlin/`: projeto Android Kotlin que empacota a versão web em uma WebView.
 
 ## Como compilar/exportar
 
@@ -234,6 +254,33 @@ O build entregue para avaliação já está pronto em:
 Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk
 ```
 
+### Compilar APK Kotlin
+
+Requisitos:
+
+* Java 17
+* Android SDK instalado
+* Git LFS, para baixar o APK e demais binários grandes quando necessário
+
+Comando:
+
+```bash
+cd android-kotlin
+./gradlew assembleDebug
+```
+
+O APK gerado fica em:
+
+```text
+android-kotlin/app/build/outputs/apk/debug/app-debug.apk
+```
+
+O APK Kotlin versionado no repositório fica em:
+
+```text
+Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk
+```
+
 ## Histórico de commits e contribuições
 
 O repositório foi organizado com commits pequenos para facilitar a avaliação do processo de desenvolvimento. Os commits recentes documentam:
@@ -243,6 +290,8 @@ O repositório foi organizado com commits pequenos para facilitar a avaliação 
 * adição de templates do Godot;
 * adição de build Windows;
 * adição de arquivos Android necessários ao projeto;
+* adição do APK Kotlin com Git LFS;
+* atualização do README a cada entrega relevante;
 * organização dos artefatos de build.
 
 Para avaliação do hackathon, o histórico pode ser consultado em:
