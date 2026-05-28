@@ -1,84 +1,84 @@
-# Sim-Bora Piaui
+# Sim-Bora Piauí
 
-MVP de jogo digital 2D educativo sobre patrimonio historico, cultural e geografico do Piaui, desenvolvido para a trilha de Tecnologia da Informacao da SEDUC-PI. A proposta transforma pontos de memoria, paisagens, personagens e saberes locais em uma experiencia jogavel, com exploracao, dialogos, missoes e colecao cultural.
+MVP de jogo digital 2D educativo sobre patrimônio histórico, cultural e geográfico do Piauí, desenvolvido para a trilha de Tecnologia da Informação da SEDUC-PI. A proposta transforma pontos de memória, paisagens, personagens e saberes locais em uma experiência jogável, com exploração, diálogos, missões e coleção cultural.
 
-O MVP e funcional e validavel: pode ser executado no Android, no Windows ou aberto pelo projeto-fonte no Godot. O foco desta versao e demonstrar a viabilidade tecnica da solucao e o valor pedagogico da proposta, sem depender de um produto final completo.
+O MVP é funcional e validável: pode ser executado no Android, no Windows ou aberto pelo projeto-fonte no Godot. O foco desta versão é demonstrar a viabilidade técnica da solução e o valor pedagógico da proposta, sem depender de um produto final completo.
 
-## Links rapidos
+## Links rápidos
 
-- Repositorio: <https://github.com/nt8816/sim-bora-piaui>
-- APK Android: <https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk>
-- Executavel Windows: <https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe>
-- Projeto Godot: [`Simbora-Piaui/godot/project.godot`](Simbora-Piaui/godot/project.godot)
+* Repositório: [https://github.com/nt8816/sim-bora-piaui](https://github.com/nt8816/sim-bora-piaui)
+* APK Android: [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk)
+* Executável Windows: [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe)
+* Projeto Godot: [`Simbora-Piaui/godot/project.godot`](Simbora-Piaui/godot/project.godot)
 
-> Observacao: os arquivos grandes do projeto usam Git LFS. Pelo navegador, os links acima baixam os arquivos diretamente. Ao clonar o repositorio, instale o Git LFS e rode `git lfs pull`.
+> Observação: os arquivos grandes do projeto usam Git LFS. Pelo navegador, os links acima baixam os arquivos diretamente. Ao clonar o repositório, instale o Git LFS e rode `git lfs pull`.
 
 ## Equipe
 
-- Erika Tauane
-- Joyce Rodrigues
-- Tiago Araujo
-- Natan Araujo
-- Maria Vitoria
+* Erika Tauane
+* Joyce Rodrigues
+* Tiago Araújo
+* Natan Araújo
+* Maria Vitória
 
-Orientador: Lucas Albuquerque Moura  
-Escola: CETI Dr. Joao Carvalho, Dom Expedito Lopes-PI  
-Trilha: Tecnologia da Informacao, SEDUC-PI
+Orientador: Lucas Albuquerque Moura
+Escola: CETI Dr. João Carvalho, Dom Expedito Lopes-PI
+Trilha: Tecnologia da Informação, SEDUC-PI
 
 ## Problema
 
-Muitos estudantes conhecem pouco o patrimonio cultural, historico e geografico do proprio territorio. Em geral, esse conteudo aparece de forma fragmentada, distante da linguagem digital que faz parte do cotidiano dos jovens.
+Muitos estudantes conhecem pouco o patrimônio cultural, histórico e geográfico do próprio território. Em geral, esse conteúdo aparece de forma fragmentada, distante da linguagem digital que faz parte do cotidiano dos jovens.
 
-O Sim-Bora Piaui propõe uma forma lúdica de aproximar estudantes da memoria local, usando um jogo 2D como ferramenta de aprendizagem, exploracao e valorizacao cultural.
+O Sim-Bora Piauí propõe uma forma lúdica de aproximar estudantes da memória local, usando um jogo 2D como ferramenta de aprendizagem, exploração e valorização cultural.
 
-## Solucao
+## Solução
 
-O jogador explora uma versao 2D inspirada em Picos-PI, interage com personagens, visita pontos de interesse, registra memorias e cumpre missoes educativas. A experiencia combina:
+O jogador explora uma versão 2D inspirada em Picos-PI, interage com personagens, visita pontos de interesse, registra memórias e cumpre missões educativas. A experiência combina:
 
-- exploracao top-down em mapa 2D;
-- narrativa com personagens locais;
-- missoes culturais e educativas;
-- quiz e dialogos sobre pontos historicos;
-- colecao de memorias desbloqueaveis;
-- controles para computador e Android;
-- builds exportados para avaliacao rapida.
+* exploração top-down em mapa 2D;
+* narrativa com personagens locais;
+* missões culturais e educativas;
+* quiz e diálogos sobre pontos históricos;
+* coleção de memórias desbloqueáveis;
+* controles para computador e Android;
+* builds exportados para avaliação rápida.
 
-## Conteudo do MVP
+## Conteúdo do MVP
 
-Esta versao demonstra a primeira etapa da jornada:
+Esta versão demonstra a primeira etapa da jornada:
 
-- tela inicial com identidade visual do projeto;
-- introducao narrativa em Picos;
-- mapa exploravel com praca, ruas, feira, igreja, museu, rio e areas de memoria;
-- personagens como Seu Ze, Dona Rita e Ana;
-- missoes ligadas a cultura, memoria, feira, Museu Ozildo Albano, Igreja de Picos e Rio Guaribas;
-- sistema de dialogos, respostas e recompensas;
-- album/colecao cultural;
-- suporte a teclado e controle virtual no Android;
-- APK Android corrigido, com os dados do projeto empacotados corretamente.
+* tela inicial com identidade visual do projeto;
+* introdução narrativa em Picos;
+* mapa explorável com praça, ruas, feira, igreja, museu, rio e áreas de memória;
+* personagens como Seu Zé, Dona Rita e Ana;
+* missões ligadas à cultura, memória, feira, Museu Ozildo Albano, Igreja de Picos e Rio Guaribas;
+* sistema de diálogos, respostas e recompensas;
+* álbum/coleção cultural;
+* suporte a teclado e controle virtual no Android;
+* APK Android corrigido, com os dados do projeto empacotados corretamente.
 
 ## Tecnologias utilizadas
 
-- Godot Engine 4.6.2
-- GDScript
-- Android SDK / Build Tools 35
-- Java 17
-- Git e GitHub
-- Git LFS para versionamento dos binarios grandes
-- Assets 2D proprios e adaptados para o MVP
+* Godot Engine 4.6.2
+* GDScript
+* Android SDK / Build Tools 35
+* Java 17
+* Git e GitHub
+* Git LFS para versionamento dos binários grandes
+* Assets 2D próprios e adaptados para o MVP
 
 ## Como baixar e executar
 
 ### Android
 
 1. Baixe o APK pelo link:
-   <https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk>
+   [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk)
 2. Transfira o arquivo para o celular, se estiver baixando pelo computador.
-3. No Android, permita a instalacao de app de fonte externa quando o sistema solicitar.
+3. No Android, permita a instalação de app de fonte externa quando o sistema solicitar.
 4. Instale o APK.
-5. Abra o app `Sim-Bora Piaui`.
+5. Abra o app `Sim-Bora Piauí`.
 
-Arquivo no repositorio:
+Arquivo no repositório:
 
 ```text
 Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk
@@ -86,12 +86,12 @@ Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk
 
 ### Windows
 
-1. Baixe o executavel:
-   <https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe>
+1. Baixe o executável:
+   [https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe](https://github.com/nt8816/sim-bora-piaui/raw/main/Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe)
 2. Abra o arquivo `Sim-Bora-Piaui.exe`.
-3. Se o Windows exibir um aviso de seguranca por ser um executavel baixado da internet, escolha a opcao de executar mesmo assim apenas se o arquivo veio deste repositorio oficial.
+3. Se o Windows exibir um aviso de segurança por ser um executável baixado da internet, escolha a opção de executar mesmo assim apenas se o arquivo veio deste repositório oficial.
 
-Arquivo no repositorio:
+Arquivo no repositório:
 
 ```text
 Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe
@@ -99,17 +99,17 @@ Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe
 
 ### Linux e macOS pelo Godot
 
-Ainda nao ha build nativo pronto para Linux/macOS neste repositorio. Nessas plataformas, a forma recomendada de executar e pelo Godot:
+Ainda não há build nativo pronto para Linux/macOS neste repositório. Nessas plataformas, a forma recomendada de executar é pelo Godot:
 
 1. Instale o Godot Engine 4.6.2.
-2. Clone o repositorio:
+2. Clone o repositório:
 
 ```bash
 git clone https://github.com/nt8816/sim-bora-piaui.git
 cd sim-bora-piaui
 ```
 
-3. Se quiser baixar tambem os binarios grandes versionados no LFS:
+3. Se quiser baixar também os binários grandes versionados no LFS:
 
 ```bash
 git lfs install
@@ -134,7 +134,7 @@ res://scenes/Main.tscn
 
 ### Web / navegador
 
-O repositorio tambem mantem um prototipo web em:
+O repositório também mantém um protótipo web em:
 
 ```text
 Simbora-Piaui/index.html
@@ -142,17 +142,17 @@ Simbora-Piaui/game.js
 Simbora-Piaui/style.css
 ```
 
-Esse prototipo serve como referencia visual e de experimentacao. A versao principal do MVP, para avaliacao tecnica, e a versao Godot.
+Esse protótipo serve como referência visual e de experimentação. A versão principal do MVP, para avaliação técnica, é a versão Godot.
 
 ## Como jogar
 
-- No computador: use `WASD` ou as setas para andar.
-- Interacao: pressione `F` perto de personagens, locais ou missoes.
-- Menu/colecao: use os botoes na interface.
-- No Android: use o controle virtual na tela e o botao de interacao.
-- Objetivo: explore Picos, converse com personagens, registre memorias, complete missoes e desbloqueie conhecimentos culturais.
+* No computador: use `WASD` ou as setas para andar.
+* Interação: pressione `F` perto de personagens, locais ou missões.
+* Menu/coleção: use os botões na interface.
+* No Android: use o controle virtual na tela e o botão de interação.
+* Objetivo: explore Picos, converse com personagens, registre memórias, complete missões e desbloqueie conhecimentos culturais.
 
-## Estrutura do repositorio
+## Estrutura do repositório
 
 ```text
 Simbora-Piaui/
@@ -170,7 +170,7 @@ Simbora-Piaui/
   style.css
 ```
 
-## Arquitetura da solucao
+## Arquitetura da solução
 
 ```mermaid
 flowchart TD
@@ -178,24 +178,24 @@ flowchart TD
     B --> C[Godot Engine 4.6.2]
     C --> D[Cena principal Main.tscn]
     D --> E[Script principal main.gd]
-    E --> F[Sistema de movimento e camera]
-    E --> G[Sistema de missoes e dialogos]
+    E --> F[Sistema de movimento e câmera]
+    E --> G[Sistema de missões e diálogos]
     E --> H[Sistema de quiz e recompensas]
-    E --> I[Colecao de memorias culturais]
+    E --> I[Coleção de memórias culturais]
     E --> J[Controles de teclado e toque]
-    C --> K[Assets 2D e audio]
-    C --> L[Exportacao Android APK]
-    C --> M[Exportacao Windows EXE]
+    C --> K[Assets 2D e áudio]
+    C --> L[Exportação Android APK]
+    C --> M[Exportação Windows EXE]
 ```
 
 ### Componentes principais
 
-- `project.godot`: configuracao do projeto, mapa de entradas e definicoes gerais.
-- `scenes/Main.tscn`: cena principal carregada pelo Godot.
-- `scripts/main.gd`: concentra a logica do MVP, incluindo mapa, jogador, missoes, dialogos, colecao e interface.
-- `assets/`: imagens, sprites, texturas e audio usados no jogo.
-- `builds/android/`: APK Android pronto para teste.
-- `builds/windows/`: executavel Windows pronto para teste.
+* `project.godot`: configuração do projeto, mapa de entradas e definições gerais.
+* `scenes/Main.tscn`: cena principal carregada pelo Godot.
+* `scripts/main.gd`: concentra a lógica do MVP, incluindo mapa, jogador, missões, diálogos, coleção e interface.
+* `assets/`: imagens, sprites, texturas e áudio usados no jogo.
+* `builds/android/`: APK Android pronto para teste.
+* `builds/windows/`: executável Windows pronto para teste.
 
 ## Como compilar/exportar
 
@@ -212,55 +212,55 @@ No editor, pressione `F5`.
 
 Requisitos:
 
-- Godot Engine 4.6.2
-- Java 17
-- Android SDK instalado
-- Build Tools 35
-- Git LFS, caso o repositorio tenha sido clonado sem baixar os binarios
+* Godot Engine 4.6.2
+* Java 17
+* Android SDK instalado
+* Build Tools 35
+* Git LFS, caso o repositório tenha sido clonado sem baixar os binários
 
-O preset Android esta em:
+O preset Android está em:
 
 ```text
 Simbora-Piaui/godot/export_presets.cfg
 ```
 
-O build entregue para avaliacao ja esta pronto em:
+O build entregue para avaliação já está pronto em:
 
 ```text
 Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk
 ```
 
-## Historico de commits e contribuicoes
+## Histórico de commits e contribuições
 
-O repositorio foi organizado com commits pequenos para facilitar a avaliacao do processo de desenvolvimento. Os commits recentes documentam:
+O repositório foi organizado com commits pequenos para facilitar a avaliação do processo de desenvolvimento. Os commits recentes documentam:
 
-- correcao do APK Android;
-- inclusao de arquivos grandes via Git LFS;
-- adicao de templates do Godot;
-- adicao de build Windows;
-- adicao de arquivos Android necessarios ao projeto;
-- organizacao dos artefatos de build.
+* correção do APK Android;
+* inclusão de arquivos grandes via Git LFS;
+* adição de templates do Godot;
+* adição de build Windows;
+* adição de arquivos Android necessários ao projeto;
+* organização dos artefatos de build.
 
-Para avaliacao do hackathon, o historico pode ser consultado em:
+Para avaliação do hackathon, o histórico pode ser consultado em:
 
 ```bash
 git log --oneline
 ```
 
-Ou diretamente no GitHub, pela aba `Commits` do repositorio.
+Ou diretamente no GitHub, pela aba `Commits` do repositório.
 
 ## Checklist do envio
 
-- [x] Repositorio no GitHub
-- [x] README com descricao do projeto
-- [x] Tecnologias utilizadas
-- [x] Instrucoes de execucao
-- [x] APK Android disponivel
-- [x] Executavel Windows disponivel
-- [x] Diagrama de arquitetura
-- [x] Historico de commits organizado
-- [x] Arquivos grandes controlados com Git LFS
+* [x] Repositório no GitHub
+* [x] README com descrição do projeto
+* [x] Tecnologias utilizadas
+* [x] Instruções de execução
+* [x] APK Android disponível
+* [x] Executável Windows disponível
+* [x] Diagrama de arquitetura
+* [x] Histórico de commits organizado
+* [x] Arquivos grandes controlados com Git LFS
 
-## Observacoes para avaliadores
+## Observações para avaliadores
 
-Este projeto e um MVP. O objetivo e demonstrar a viabilidade tecnica e pedagogica da solucao: um jogo 2D capaz de apresentar patrimonio local de forma interativa, executavel e validavel. A versao atual prioriza Picos-PI como recorte inicial e pode ser expandida para outras cidades, fases, missoes e conteudos culturais do Piaui.
+Este projeto é um MVP. O objetivo é demonstrar a viabilidade técnica e pedagógica da solução: um jogo 2D capaz de apresentar patrimônio local de forma interativa, executável e validável. A versão atual prioriza Picos-PI como recorte inicial e pode ser expandida para outras cidades, fases, missões e conteúdos culturais do Piauí.
