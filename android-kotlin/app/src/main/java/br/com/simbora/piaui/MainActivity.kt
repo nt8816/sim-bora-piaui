@@ -1,62 +1,32 @@
 package br.com.simbora.piaui
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
 
 class MainActivity : Activity() {
-    private lateinit var webView: WebView
+    private lateinit var gameView: NativeGameView
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        webView = WebView(this).apply {
-            webViewClient = WebViewClient()
-            webChromeClient = WebChromeClient()
-            setBackgroundColor(0xff101827.toInt())
-            isVerticalScrollBarEnabled = false
-            isHorizontalScrollBarEnabled = false
-
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = false
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
-            settings.allowFileAccess = true
-            settings.allowContentAccess = true
-            settings.loadWithOverviewMode = true
-            settings.useWideViewPort = true
-        }
-
-        setContentView(webView)
+        gameView = NativeGameView(this)
+        setContentView(gameView)
         hideSystemBars()
-        webView.loadUrl("file:///android_asset/www/index.html")
     }
 
     override fun onResume() {
         super.onResume()
         hideSystemBars()
-        webView.onResume()
+        gameView.resume()
     }
 
     override fun onPause() {
-        webView.onPause()
+        gameView.pause()
         super.onPause()
-    }
-
-    override fun onDestroy() {
-        webView.destroy()
-        super.onDestroy()
     }
 
     private fun hideSystemBars() {

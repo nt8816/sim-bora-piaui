@@ -63,7 +63,7 @@ Esta versão demonstra a primeira etapa da jornada:
 * Godot Engine 4.6.2
 * GDScript
 * Kotlin
-* Android WebView
+* Android Canvas nativo
 * Gradle / Android Gradle Plugin
 * Android SDK / Build Tools 35
 * Java 17
@@ -158,7 +158,7 @@ Simbora-Piaui/style.css
 
 Esse protótipo serve como referência visual e de experimentação. A versão principal do MVP, para avaliação técnica, é a versão Godot.
 
-O APK Kotlin usa esse protótipo web empacotado em um app Android nativo com `WebView`, mantendo os assets locais dentro do aplicativo.
+O APK Kotlin usa uma versão nativa em `Canvas`, escrita em Kotlin a partir da lógica do protótipo web e do GDScript. Os assets continuam locais dentro do aplicativo.
 
 ## Como jogar
 
@@ -206,8 +206,8 @@ flowchart TD
     C --> K[Assets 2D e áudio]
     C --> L[Exportação Android APK]
     C --> M[Exportação Windows EXE]
-    N[Projeto Kotlin Android] --> O[WebView em tela cheia]
-    O --> P[Protótipo web e assets locais]
+    N[Projeto Kotlin Android] --> O[NativeGameView com Canvas]
+    O --> P[Lógica portada do JS/GDScript e assets locais]
     N --> Q[APK Kotlin]
 ```
 
@@ -219,7 +219,7 @@ flowchart TD
 * `assets/`: imagens, sprites, texturas e áudio usados no jogo.
 * `builds/android/`: APK Android pronto para teste.
 * `builds/windows/`: executável Windows pronto para teste.
-* `android-kotlin/`: projeto Android Kotlin que empacota a versão web em uma WebView.
+* `android-kotlin/`: projeto Android Kotlin nativo com `NativeGameView`, `Canvas`, toque, diálogos, missões e assets locais.
 
 ## Como compilar/exportar
 
@@ -280,6 +280,8 @@ O APK Kotlin versionado no repositório fica em:
 ```text
 Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk
 ```
+
+Observação: a versão Kotlin nativa não carrega HTML em `WebView`. A Activity abre uma `NativeGameView` escrita em Kotlin, que redesenha o jogo com `Canvas` e mantém a jornada principal: introdução, câmera, mototáxi, Seu Zé, Dona Rita, Ana, páginas do diário, coleção, marketplace e desbloqueio da Capadócia.
 
 ## Histórico de commits e contribuições
 
