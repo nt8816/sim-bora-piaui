@@ -10,3 +10,4 @@ Simbora-Piaui/builds/android-template/build/libs/release/godot-lib.template_rele
 Simbora-Piaui/builds/android-template/build/build/intermediates/merged_jni_libs/standardDebug/mergeStandardDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
 Simbora-Piaui/builds/android-template/build/build/intermediates/merged_jni_libs/monoDebug/mergeMonoDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
 Simbora-Piaui/builds/android-template/build/build/intermediates/merged_jni_libs/instrumentedDebug/mergeInstrumentedDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk filter=lfs diff=lfs merge=lfs -text

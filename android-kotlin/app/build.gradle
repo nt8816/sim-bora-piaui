@@ -1,0 +1,94 @@
+plugins {
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+}
+
+def generatedWebAssets = layout.buildDirectory.dir("generated/assets/www")
+
+tasks.register("syncWebGameAssets") {
+    def webSource = rootProject.layout.projectDirectory.dir("../Simbora-Piaui")
+    inputs.files(
+        webSource.file("index.html"),
+        webSource.file("style.css"),
+        webSource.file("game.js"),
+        webSource.file("manifest.webmanifest")
+    )
+    inputs.dir(webSource.dir("elementos "))
+    inputs.dir(webSource.dir("godot/assets"))
+    outputs.dir(generatedWebAssets)
+
+    doLast {
+        def output = generatedWebAssets.get().asFile
+        delete(output)
+        output.mkdirs()
+
+        copy {
+            from(webSource)
+            into(output)
+            include "index.html", "style.css", "game.js", "manifest.webmanifest"
+        }
+        copy {
+            from(webSource.dir("elementos "))
+            into(new File(output, "elementos"))
+            include "**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.mp3"
+        }
+        copy {
+            from(webSource.dir("godot/assets"))
+            into(new File(output, "godot/assets"))
+            include "*.png", "*.jpg", "*.jpeg", "*.mp3"
+        }
+
+        def replacements = [
+            "elementos /"      : "elementos/",
+            "LOGO SIMBORA.png" : "logo_simbora.png",
+            "seu_ze_lendas.png": "godot/assets/seu_ze_lendas.png",
+            "audio_abertura_picos.mp3": "godot/assets/audio_abertura_picos.mp3"
+        ]
+
+        ["index.html", "style.css", "game.js", "manifest.webmanifest"].each { name ->
+            def file = new File(output, name)
+            if (file.isFile()) {
+                def text = file.getText("UTF-8")
+                replacements.each { from, to -> text = text.replace(from, to) }
+                file.write(text, "UTF-8")
+            }
+        }
+
+        def logoWithSpace = new File(output, "elementos/LOGO SIMBORA.png")
+        if (logoWithSpace.isFile()) {
+            logoWithSpace.renameTo(new File(output, "elementos/logo_simbora.png"))
+        }
+    }
+}
+
+android {
+    namespace "br.com.simbora.piaui"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "br.com.simbora.piaui"
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(generatedWebAssets)
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("syncWebGameAssets")
+}
