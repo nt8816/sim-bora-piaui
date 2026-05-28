@@ -285,6 +285,8 @@ Simbora-Piaui/builds/android/sim-bora-piaui-kotlin-debug.apk
 
 Observação: a versão Kotlin nativa não carrega HTML em `WebView`. A Activity abre uma `NativeGameView` escrita em Kotlin, que redesenha o jogo com `Canvas` e mantém a jornada principal: introdução, câmera, mototáxi, Seu Zé, Dona Rita, Ana, páginas do diário, coleção, marketplace e desbloqueio da Capadócia.
 
+Atualização visual: a versão Kotlin passou a usar mais assets reais da versão Godot/EXE no mundo jogável, incluindo solo dinâmico, asfalto, praça Ozildo, árvores, cactos, placa de Picos, Seu Zé e os pontos principais. A intenção é manter a versão Kotlin visualmente alinhada ao mundo e às missões do projeto Godot, evitando placeholders geométricos.
+
 ## Histórico de commits e contribuições
 
 O repositório foi organizado com commits pequenos para facilitar a avaliação do processo de desenvolvimento. Os commits recentes documentam:

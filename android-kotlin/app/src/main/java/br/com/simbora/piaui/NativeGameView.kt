@@ -696,12 +696,30 @@ class NativeGameView(context: Context) : View(context) {
         for (x in left..right) for (y in top..bottom) {
             val px = x * TILE
             val py = y * TILE
-            paint.color = when {
-                plazaTiles.contains(key(x, y)) -> Color.rgb(215, 200, 165)
-                picosTiles.contains(key(x, y)) -> Color.rgb(185, 160, 92)
-                else -> Color.rgb(113, 173, 90)
+            val tileRect = RectF(px, py, px + TILE, py + TILE)
+            when {
+                plazaTiles.contains(key(x, y)) -> {
+                    paint.color = Color.rgb(215, 200, 165)
+                    canvas.drawRect(tileRect, paint)
+                }
+                picosTiles.contains(key(x, y)) -> {
+                    assets.dirt?.let { canvas.drawBitmap(it, null, tileRect, null) }
+                        ?: run {
+                            paint.color = Color.rgb(185, 160, 92)
+                            canvas.drawRect(tileRect, paint)
+                        }
+                }
+                else -> {
+                    assets.grass?.let { canvas.drawBitmap(it, null, tileRect, null) }
+                        ?: run {
+                            paint.color = Color.rgb(113, 173, 90)
+                            canvas.drawRect(tileRect, paint)
+                        }
+                }
             }
-            canvas.drawRect(px, py, px + TILE, py + TILE, paint)
+        }
+        assets.ozildoPhoto?.let {
+            canvas.drawBitmap(it, null, RectF(8f * TILE, 3f * TILE, 25f * TILE, 12f * TILE), null)
         }
         assets.churchPlaza?.let {
             canvas.drawBitmap(it, null, RectF(18f * TILE, 12f * TILE, 48f * TILE, 24f * TILE), null)
@@ -712,11 +730,27 @@ class NativeGameView(context: Context) : View(context) {
     }
 
     private fun drawRoads(canvas: Canvas) {
-        paint.color = Color.rgb(96, 96, 92)
-        canvas.drawRect(20f * TILE, 14.4f * TILE, 92f * TILE, 16.2f * TILE, paint)
-        canvas.drawRect(38.8f * TILE, -5f * TILE, 40.6f * TILE, 27f * TILE, paint)
+        drawAsphaltStrip(canvas, RectF(20f * TILE, 14.4f * TILE, 92f * TILE, 16.2f * TILE))
+        drawAsphaltStrip(canvas, RectF(38.8f * TILE, -5f * TILE, 40.6f * TILE, 27f * TILE))
         paint.color = Color.rgb(239, 232, 201)
         for (x in 20..92 step 4) canvas.drawRect(x * TILE, 15.2f * TILE, x * TILE + 34f, 15.32f * TILE, paint)
+    }
+
+    private fun drawAsphaltStrip(canvas: Canvas, rect: RectF) {
+        assets.asphalt?.let { asphalt ->
+            var x = rect.left
+            while (x < rect.right) {
+                var y = rect.top
+                while (y < rect.bottom) {
+                    canvas.drawBitmap(asphalt, null, RectF(x, y, min(x + TILE, rect.right), min(y + TILE, rect.bottom)), null)
+                    y += TILE
+                }
+                x += TILE
+            }
+        } ?: run {
+            paint.color = Color.rgb(96, 96, 92)
+            canvas.drawRect(rect, paint)
+        }
     }
 
     private fun drawProps(canvas: Canvas) {
@@ -724,8 +758,8 @@ class NativeGameView(context: Context) : View(context) {
             val x = prop.x * TILE
             val y = prop.y * TILE
             when (prop.type) {
-                "church" -> assets.church?.let { canvas.drawBitmap(it, null, RectF(x - 198f, y - 360f, x + 307f, y + 85f), null) } ?: drawBuilding(canvas, x, y, true)
-                "museum" -> assets.museum?.let { canvas.drawBitmap(it, null, RectF(x - 180f, y - 190f, x + 470f, y + 260f), null) } ?: drawBuilding(canvas, x, y, false)
+                "church" -> assets.church?.let { canvas.drawBitmap(it, null, RectF(x - 198f, y - 360f, x + 307f, y + 85f), null) } ?: drawLandmarkFallback(canvas, x, y)
+                "museum" -> assets.museum?.let { canvas.drawBitmap(it, null, RectF(x - 180f, y - 190f, x + 470f, y + 260f), null) } ?: drawLandmarkFallback(canvas, x, y)
                 "feira_roupas" -> assets.feiraRoupas?.let { canvas.drawBitmap(it, null, RectF(x, y, x + 900f, y + 285f), null) }
                 "feira_bancas" -> assets.feiraBancas?.let { canvas.drawBitmap(it, null, RectF(x, y, x + 805f, y + 245f), null) }
                 "feira_vertical" -> assets.feiraAdaptada?.let { canvas.drawBitmap(it, null, RectF(x - 106f, y - 12f, x + 154f, y + 370f), null) }
@@ -733,7 +767,11 @@ class NativeGameView(context: Context) : View(context) {
                 "ana" -> drawCharacterSheet(canvas, assets.ana, x, y, 112, 160, 5, 20, 132f)
                 "lamp" -> drawLamp(canvas, x, y)
                 "bench" -> drawBench(canvas, x, y)
-                else -> drawBuilding(canvas, x, y, false)
+                "cactus" -> drawPropBitmap(canvas, assets.cactus, x, y, 74f)
+                "aroeira", "malungu", "manga", "manga_diferente", "umbu", "ype" -> drawPropBitmap(canvas, assets.trees[prop.type], x, y, 104f)
+                "buriti" -> drawPropBitmap(canvas, assets.trees[prop.type], x, y, 132f)
+                "seu_ze" -> drawPropBitmap(canvas, assets.seuZe, x, y, 150f)
+                "sign" -> assets.sign?.let { canvas.drawBitmap(it, null, RectF(x - 200f, y - 80f, x + 300f, y + 120f), null) }
             }
         }
     }
@@ -742,7 +780,9 @@ class NativeGameView(context: Context) : View(context) {
         "church" -> prop.y + 6f
         "museum" -> prop.y + 4f
         "feira_roupas", "feira_bancas", "feira_vertical" -> prop.y + 3.4f
-        "dona", "ana" -> prop.y + 2.6f
+        "dona", "ana", "seu_ze" -> prop.y + 2.6f
+        "buriti" -> prop.y + 2.4f
+        "aroeira", "malungu", "manga", "manga_diferente", "umbu", "ype", "cactus" -> prop.y + 1.8f
         else -> prop.y.toFloat()
     }
 
@@ -1046,11 +1086,24 @@ class NativeGameView(context: Context) : View(context) {
         canvas.drawRect(x - 14f, y - 20f, x + 14f, y + 12f, paint)
     }
 
-    private fun drawBuilding(canvas: Canvas, x: Float, y: Float, large: Boolean) {
-        paint.color = if (large) Color.rgb(215, 210, 189) else Color.rgb(191, 199, 207)
-        canvas.drawRect(x + 4f, y - 72f, x + 96f, y + 24f, paint)
-        paint.color = Color.rgb(77, 93, 112)
-        for (row in 0..2) for (col in 0..2) canvas.drawRect(x + 18f + col * 24f, y - 58f + row * 24f, x + 30f + col * 24f, y - 46f + row * 24f, paint)
+    private fun drawPropBitmap(canvas: Canvas, bitmap: Bitmap?, x: Float, y: Float, drawH: Float) {
+        if (bitmap == null) return
+        paint.color = Color.argb(42, 0, 0, 0)
+        canvas.drawOval(RectF(x - 28f, y + 16f, x + 28f, y + 25f), paint)
+        val drawW = drawH * bitmap.width / bitmap.height
+        canvas.drawBitmap(bitmap, null, RectF(x - drawW / 2f, y - drawH + 18f, x + drawW / 2f, y + 18f), null)
+    }
+
+    private fun drawLandmarkFallback(canvas: Canvas, x: Float, y: Float) {
+        paint.color = Color.rgb(215, 200, 165)
+        canvas.drawPath(Path().apply {
+            moveTo(x - 72f, y - 18f)
+            lineTo(x, y - 96f)
+            lineTo(x + 72f, y - 18f)
+            close()
+        }, paint)
+        paint.color = Color.rgb(120, 68, 44)
+        canvas.drawRect(x - 58f, y - 18f, x + 58f, y + 42f, paint)
     }
 
     private fun drawLamp(canvas: Canvas, x: Float, y: Float) {
@@ -1085,10 +1138,15 @@ class NativeGameView(context: Context) : View(context) {
         props.add(Prop("feira_vertical", picosChurch.first + 26, -5))
         props.add(Prop("dona", donaRita.first, donaRita.second))
         props.add(Prop("ana", anaMuseu.first, anaMuseu.second))
+        props.add(Prop("seu_ze", picosChurch.first + 3, picosChurch.second + 2))
+        props.add(Prop("sign", 13, 6))
         listOf(Pair(35, 15), Pair(45, 15), Pair(56, 16), Pair(66, 12), Pair(74, 21)).forEach { props.add(Prop("lamp", it.first, it.second)) }
         listOf(Pair(31, 20), Pair(42, 21), Pair(53, 20), Pair(70, 19)).forEach { props.add(Prop("bench", it.first, it.second)) }
-        for (x in 28..37 step 4) props.add(Prop("building", x, 7))
-        for (x in 46..60 step 5) props.add(Prop("building", x, 22))
+        listOf(
+            Prop("aroeira", 26, 21), Prop("buriti", 32, 23), Prop("malungu", 58, 6),
+            Prop("manga", 62, 22), Prop("manga_diferente", 76, 7), Prop("umbu", 81, 22),
+            Prop("ype", 44, 6), Prop("cactus", 29, 24), Prop("cactus", 83, 24)
+        ).forEach { props.add(it) }
         solidRects.add(RectF(picosChurch.first * TILE - 168f, picosChurch.second * TILE - 255f, picosChurch.first * TILE + 278f, picosChurch.second * TILE + 80f))
         solidRects.add(RectF(ozildoMuseum.first * TILE - 170f, ozildoMuseum.second * TILE - 170f, ozildoMuseum.first * TILE + 450f, ozildoMuseum.second * TILE + 210f))
         solidRects.add(RectF((picosChurch.first + 5) * TILE, -4f * TILE + 28f, (picosChurch.first + 5) * TILE + 900f, -4f * TILE + 272f))
@@ -1171,6 +1229,12 @@ class NativeGameView(context: Context) : View(context) {
         var sign: Bitmap? = null
         var camera: Bitmap? = null
         var moto: Bitmap? = null
+        var dirt: Bitmap? = null
+        var grass: Bitmap? = null
+        var asphalt: Bitmap? = null
+        var ozildoPhoto: Bitmap? = null
+        var cactus: Bitmap? = null
+        var seuZe: Bitmap? = null
         var feiraAdaptada: Bitmap? = null
         var feiraRoupas: Bitmap? = null
         var feiraBancas: Bitmap? = null
@@ -1184,6 +1248,7 @@ class NativeGameView(context: Context) : View(context) {
         var churchPlaza: Bitmap? = null
         var museumPlaza: Bitmap? = null
         var capadocia: Bitmap? = null
+        val trees = mutableMapOf<String, Bitmap?>()
 
         fun load() {
             menu = bitmap("www/elementos/menu_inicial_limpa.png")
@@ -1197,6 +1262,12 @@ class NativeGameView(context: Context) : View(context) {
             sign = bitmap("www/godot/assets/placa_picos.png")
             camera = bitmap("www/godot/assets/camera.png")
             moto = bitmap("www/godot/assets/opening_market_mototaxi.png")
+            dirt = bitmap("www/godot/assets/terra_dinamica.png")
+            grass = bitmap("www/godot/assets/opening_grass_tile.png")
+            asphalt = bitmap("www/godot/assets/asfalto.png")
+            ozildoPhoto = bitmap("www/godot/assets/praca_ozildo_albano.jpeg")
+            cactus = bitmap("www/godot/assets/cacto_pixel.png")
+            seuZe = bitmap("www/godot/assets/seu_ze_lendas.png")
             feiraAdaptada = bitmap("www/godot/assets/feira_adaptada.png")
             feiraRoupas = bitmap("www/godot/assets/feira_roupas_horizontal.png")
             feiraBancas = bitmap("www/godot/assets/feira_bancas_horizontal.png")
@@ -1210,6 +1281,13 @@ class NativeGameView(context: Context) : View(context) {
             churchPlaza = bitmap("www/godot/assets/praca_igreja_picos_hd.png")
             museumPlaza = bitmap("www/godot/assets/praca_museu_completa.png")
             capadocia = bitmap("www/godot/assets/capadocia_em_breve.png")
+            trees["aroeira"] = bitmap("www/godot/assets/aroeira.png")
+            trees["buriti"] = bitmap("www/godot/assets/buriti.png")
+            trees["malungu"] = bitmap("www/godot/assets/malungu.png")
+            trees["manga"] = bitmap("www/godot/assets/manga.png")
+            trees["manga_diferente"] = bitmap("www/godot/assets/manga-diferente.png")
+            trees["umbu"] = bitmap("www/godot/assets/umbu.png")
+            trees["ype"] = bitmap("www/godot/assets/ype.png")
         }
 
         private fun bitmap(path: String): Bitmap? = runCatching {
