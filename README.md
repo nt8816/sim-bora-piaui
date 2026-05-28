@@ -249,18 +249,6 @@ git log --oneline
 
 Ou diretamente no GitHub, pela aba `Commits` do repositório.
 
-## Checklist do envio
-
-* [x] Repositório no GitHub
-* [x] README com descrição do projeto
-* [x] Tecnologias utilizadas
-* [x] Instruções de execução
-* [x] APK Android disponível
-* [x] Executável Windows disponível
-* [x] Diagrama de arquitetura
-* [x] Histórico de commits organizado
-* [x] Arquivos grandes controlados com Git LFS
-
 ## Observações para avaliadores
 
 Este projeto é um MVP. O objetivo é demonstrar a viabilidade técnica e pedagógica da solução: um jogo 2D capaz de apresentar patrimônio local de forma interativa, executável e validável. A versão atual prioriza Picos-PI como recorte inicial e pode ser expandida para outras cidades, fases, missões e conteúdos culturais do Piauí.
