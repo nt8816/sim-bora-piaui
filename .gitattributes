@@ -1,0 +1,12 @@
+Simbora-Piaui/builds/android/sim-bora-piaui-debug.apk filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/templates/Godot_v4.6.2-stable_export_templates.tpz filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/templates/gradle-8.11.1-bin.zip filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/windows/Sim-Bora-Piaui.exe filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/godot/android/build/libs/debug/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/godot/android/build/libs/release/godot-lib.template_release.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/godot/android/build/build/intermediates/merged_jni_libs/standardDebug/mergeStandardDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/android-template/build/libs/debug/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/android-template/build/libs/release/godot-lib.template_release.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/android-template/build/build/intermediates/merged_jni_libs/standardDebug/mergeStandardDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/android-template/build/build/intermediates/merged_jni_libs/monoDebug/mergeMonoDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
+Simbora-Piaui/builds/android-template/build/build/intermediates/merged_jni_libs/instrumentedDebug/mergeInstrumentedDebugJniLibFolders/out/godot-lib.template_debug.aar filter=lfs diff=lfs merge=lfs -text
