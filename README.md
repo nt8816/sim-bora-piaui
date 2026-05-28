@@ -66,6 +66,10 @@ Esta versão demonstra a primeira etapa da jornada:
 * Git e GitHub
 * Git LFS para versionamento dos binários grandes
 * Assets 2D próprios e adaptados para o MVP
+* Audacity
+* LibreSprite
+* VS Code
+* Protipagem web (HTML, CSS  e JavaScript)
 
 ## Como baixar e executar
 
