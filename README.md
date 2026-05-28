@@ -55,7 +55,7 @@ Esta versão demonstra a primeira etapa da jornada:
 * sistema de diálogos, respostas e recompensas;
 * álbum/coleção cultural;
 * suporte a teclado e controle virtual no Android;
-* APK Android corrigido, com os dados do projeto empacotados corretamente.
+* APK Android.
 
 ## Tecnologias utilizadas
 
