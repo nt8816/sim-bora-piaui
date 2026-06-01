@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bmc6iywnoewhy"
-path="res://.godot/imported/LOGO SIMBORA.png-6acbb18948925b84eacfa865f5b07a43.ctex"
+uid="uid://sxjmaoi64qgw"
+path="res://.godot/imported/botao_jogar.png-78c17ee697456dbe06b49512c863ed09.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Simbora-Piaui/elementos /LOGO SIMBORA.png"
-dest_files=["res://.godot/imported/LOGO SIMBORA.png-6acbb18948925b84eacfa865f5b07a43.ctex"]
+source_file="res://Simbora-Piaui/elementos/botoes/botao_jogar.png"
+dest_files=["res://.godot/imported/botao_jogar.png-78c17ee697456dbe06b49512c863ed09.ctex"]
 
 [params]
 

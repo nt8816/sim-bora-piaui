@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://Simbora-Piaui/elementos /menu_inicial_limpa.png"
+source_file="res://Simbora-Piaui/elementos/menu_inicial_limpa.png"
 dest_files=["res://.godot/imported/menu_inicial_limpa.png-3a54200b6519905b443ba6c82af7bf80.ctex"]
 
 [params]

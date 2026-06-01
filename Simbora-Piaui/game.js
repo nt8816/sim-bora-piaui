@@ -31,7 +31,7 @@ const WORLD_W = 58;
 const WORLD_H = 30;
 const VIEW_W = 960;
 const VIEW_H = 540;
-const ASSET_PATH = "elementos /";
+const ASSET_PATH = "elementos/";
 const OPENING_MISSION_ID = "boas_vindas_picos";
 
 const images = {

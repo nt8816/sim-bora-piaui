@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c3pyapohneej0"
-path="res://.godot/imported/personagem.jpg-0a061bd6812eb0b6738a879567db536d.ctex"
+uid="uid://badkupyo06nbs"
+path="res://.godot/imported/botao_opcoes.png-da381dd6f641db376b3fa7042f30743a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Simbora-Piaui/elementos /personagem.jpg"
-dest_files=["res://.godot/imported/personagem.jpg-0a061bd6812eb0b6738a879567db536d.ctex"]
+source_file="res://Simbora-Piaui/elementos/botoes/botao_opcoes.png"
+dest_files=["res://.godot/imported/botao_opcoes.png-da381dd6f641db376b3fa7042f30743a.ctex"]
 
 [params]
 

@@ -62,7 +62,7 @@ button:active {
   inset: 0;
   display: block;
   padding: 0;
-  background: url("elementos /menu_inicial_limpa.png") center/cover;
+  background: url("elementos/menu_inicial_limpa.png") center/cover;
   image-rendering: pixelated;
 }
 
@@ -118,19 +118,19 @@ button:active {
 }
 
 #startButton {
-  background-image: url("elementos /botoes/botao_jogar.png");
+  background-image: url("elementos/botoes/botao_jogar.png");
 }
 
 #optionsButton {
   width: clamp(252px, 26vw, 400px);
   aspect-ratio: 451 / 93;
-  background-image: url("elementos /botoes/botao_opcoes.png");
+  background-image: url("elementos/botoes/botao_opcoes.png");
 }
 
 #marketplaceButton {
   width: clamp(292px, 30vw, 450px);
   aspect-ratio: 525 / 116;
-  background-image: url("elementos /botoes/botao_marketplace.png");
+  background-image: url("elementos/botoes/botao_marketplace.png");
 }
 
 #wardrobeButton {

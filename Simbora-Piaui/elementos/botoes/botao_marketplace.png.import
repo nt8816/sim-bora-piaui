@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://sxjmaoi64qgw"
-path="res://.godot/imported/botao_jogar.png-78c17ee697456dbe06b49512c863ed09.ctex"
+uid="uid://b6hfpx8w41og1"
+path="res://.godot/imported/botao_marketplace.png-4b477d83b083531bd61466806335f252.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Simbora-Piaui/elementos /botoes/botao_jogar.png"
-dest_files=["res://.godot/imported/botao_jogar.png-78c17ee697456dbe06b49512c863ed09.ctex"]
+source_file="res://Simbora-Piaui/elementos/botoes/botao_marketplace.png"
+dest_files=["res://.godot/imported/botao_marketplace.png-4b477d83b083531bd61466806335f252.ctex"]
 
 [params]
 

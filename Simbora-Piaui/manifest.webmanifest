@@ -8,7 +8,7 @@
   "theme_color": "#12244a",
   "icons": [
     {
-      "src": "elementos /LOGO SIMBORA.png",
+      "src": "elementos/LOGO SIMBORA.png",
       "sizes": "512x512",
       "type": "image/png"
     }
